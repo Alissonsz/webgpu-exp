@@ -1,6 +1,7 @@
 import { initializeWebgpu } from "./renderer";
 import { mat4 } from "wgpu-matrix";
 import { Level } from "./Level";
+import { InputState } from "./InputState";
 
 window.addEventListener("load", async () => {
   console.log("Window loaded");
@@ -38,6 +39,7 @@ window.addEventListener("load", async () => {
 
   const { device, context } = await initializeWebgpu(canvas);
 
+  InputState.initialize();
   const level = new Level("../assets/level.ldtk", device);
   await level.initialize(device, context).then(() => {
     console.log("Level initialized");
