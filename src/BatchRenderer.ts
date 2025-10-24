@@ -1,11 +1,9 @@
 import { Texture } from './Texture';
 import { Vec2, Rect } from './Vec'
 import spriteBatchShaderCode from './shaders/sprite_batch.wgsl'
-import { mat4 } from 'wgpu-matrix'
 
 const F32_SIZE               = 4; // F32 has 4 bytes
-const VERTEX_SIZE            = F32_SIZE * 2;
-const MAX_QUADS_PER_BATCH    = 2048;
+const MAX_QUADS_PER_BATCH    = 1024;
 const MAX_VERTICES_PER_BATCH = MAX_QUADS_PER_BATCH * 4;
 const MAX_TEXTURE_SLOTS      = 16;
 const VERTICES_PER_QUAD      = 4;
@@ -13,26 +11,32 @@ const INDICES_PER_QUAD       = 6;
 
 export class VertexData {
   pos: Vec2;
-  texCoord: Vec2;
+  texCoords: Vec2;
   textureId: number;
 
-  static F32_SIZE: number = 5; // Vec2 + Vec2 + number
+  static F32_LENGTH: number = 5; // Vec2 + Vec2 + number
 
-  constructor(pos: Vec2, texCoord: Vec2, textureId: number) {
+  constructor(pos: Vec2, texCoords: Vec2, textureId: number) {
     this.pos = pos;
-    this.texCoord = texCoord;
+    this.texCoords = texCoords;
     this.textureId = textureId;
   }
 
   static byteLength(): number {
-    return VertexData.F32_SIZE * 4;
+    return VertexData.F32_LENGTH * 4;
   }
-} 
+}
 
 export class BatchRendererStats {
   quadsRendered: number = 0;
   verticesRendered: number = 0;
   batches: number = 0;
+
+  clear() {
+    this.quadsRendered = 0;
+    this.verticesRendered = 0;
+    this.batches = 0;
+  }
 }
 
 export class BatchRenderer {
@@ -46,7 +50,7 @@ export class BatchRenderer {
   private static pipeline: GPURenderPipeline
   private static context: GPUCanvasContext
   private static shaderModule: GPUShaderModule
-  private static pendingQuads: bigint = 0n;
+  private static pendingQuads: number = 0;
   private static bindGroupLayout: GPUBindGroupLayout;
   private static bindGroup: GPUBindGroup;
   private static sampler: GPUSampler;
@@ -60,11 +64,12 @@ export class BatchRenderer {
     if (BatchRenderer.hasInitialized) return;
 
     BatchRenderer.stats = new BatchRendererStats();
+
     BatchRenderer.device = device;
     BatchRenderer.context = context
     BatchRenderer.sampler = BatchRenderer.device.createSampler();
 
-    BatchRenderer.vertexBufferData = new Float32Array(MAX_VERTICES_PER_BATCH * VertexData.F32_SIZE);
+    BatchRenderer.vertexBufferData = new Float32Array(MAX_VERTICES_PER_BATCH * VertexData.F32_LENGTH);
 
     BatchRenderer.vertexBuffer = BatchRenderer.device.createBuffer({
       label: "Batch Renderer Vertex Buffer",
@@ -74,8 +79,8 @@ export class BatchRenderer {
 
     BatchRenderer.viewMatrixBuffer = BatchRenderer.device.createBuffer({
       label: "Batch Renderer View Matrix Buffer",
-      size: 64, // This consider a 4x4 matrix with f32 elements (16 * 4)
-      usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST 
+      size: 64, // This considers a 4x4 matrix with f32 elements (16 * 4)
+      usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
     });
 
     BatchRenderer.initIndexBuffer();
@@ -88,7 +93,7 @@ export class BatchRenderer {
   }
 
   private static initIndexBuffer() {
-    BatchRenderer.indexBufferData = new Uint32Array(MAX_QUADS_PER_BATCH * 6) // 3 vertices per triangle
+    BatchRenderer.indexBufferData = new Uint32Array(MAX_QUADS_PER_BATCH * 6); // 3 vertices per triangle
 
     BatchRenderer.indexBuffer = BatchRenderer.device.createBuffer({
       label: "Batch Renderer Index Buffer",
@@ -97,20 +102,19 @@ export class BatchRenderer {
     });
 
     for (let i = 0; i < MAX_QUADS_PER_BATCH; i += 1) {
-      BatchRenderer.indexBufferData[(i * INDICES_PER_QUAD) + 0] = (i * 4) 
+      BatchRenderer.indexBufferData[(i * INDICES_PER_QUAD) + 0] = (i * 4)
       BatchRenderer.indexBufferData[(i * INDICES_PER_QUAD) + 1] = (i * 4) + 1
       BatchRenderer.indexBufferData[(i * INDICES_PER_QUAD) + 2] = (i * 4) + 2
       BatchRenderer.indexBufferData[(i * INDICES_PER_QUAD) + 3] = (i * 4) + 1
       BatchRenderer.indexBufferData[(i * INDICES_PER_QUAD) + 4] = (i * 4) + 3
       BatchRenderer.indexBufferData[(i * INDICES_PER_QUAD) + 5] = (i * 4) + 2
     }
-9
     BatchRenderer.device.queue.writeBuffer(BatchRenderer.indexBuffer, 0, BatchRenderer.indexBufferData)
   }
 
   private static initPipeline() {
     const vertexBufferLayout: GPUVertexBufferLayout = {
-      arrayStride: VertexData.F32_SIZE * F32_SIZE,
+      arrayStride: VertexData.F32_LENGTH * F32_SIZE,
       attributes: [{
         // Pos attribute
         format: "float32x2",
@@ -132,7 +136,7 @@ export class BatchRenderer {
       label: "BatchRenderer Shader Module",
       code: spriteBatchShaderCode
     });
-  
+
     let canvasFormat = navigator.gpu.getPreferredCanvasFormat()
 
     const bindGroupEntries: Array<GPUBindGroupLayoutEntry> = [];
@@ -142,9 +146,9 @@ export class BatchRenderer {
       buffer: { type: "uniform" }
     })
 
-    bindGroupEntries.push({ 
-      binding: 1, 
-      visibility: GPUShaderStage.FRAGMENT, 
+    bindGroupEntries.push({
+      binding: 1,
+      visibility: GPUShaderStage.FRAGMENT,
       sampler: {
         type: "non-filtering"
       }
@@ -152,7 +156,7 @@ export class BatchRenderer {
 
     const TEXTURE_BINDS_START = bindGroupEntries.length;
     for (let i = 0; i < 16; i++) {
-      bindGroupEntries.push({ 
+      bindGroupEntries.push({
         binding: i + TEXTURE_BINDS_START,
         visibility: GPUShaderStage.FRAGMENT,
         texture: {
@@ -184,7 +188,7 @@ export class BatchRenderer {
         module: BatchRenderer.shaderModule,
         entryPoint: "fragmentMain",
         targets: [
-          { format: canvasFormat } 
+          { format: canvasFormat }
         ]
       }
     })
@@ -197,12 +201,10 @@ export class BatchRenderer {
 
   // TODO: Use a camera instead
   static begin(viewMatrix: ArrayBufferLike) {
-    BatchRenderer.stats.batches = 0;
-    BatchRenderer.stats.quadsRendered = 0;
-    BatchRenderer.stats.verticesRendered = 0;
+    BatchRenderer.stats.clear();
 
     // TODO: Only for debug
-    if (BatchRenderer.pendingQuads != 0n) {
+    if (BatchRenderer.pendingQuads != 0) {
       throw new Error("Sprite batch state is invalid: Calling begin with a non-zero batch index")
     }
 
@@ -222,39 +224,30 @@ export class BatchRenderer {
     const textureWidth = texture.width;
     const textureHeight = texture.height;
 
+    const currentVertexIndex = BatchRenderer.pendingQuads * VERTICES_PER_QUAD;
     // Top left vertex
-    const v1: VertexData = new VertexData(new Vec2(dst.x, dst.y), 
-      new Vec2(src.x / textureWidth, src.y / textureHeight), textureIndex);
+    BatchRenderer.setVertexData(currentVertexIndex    , dst.x, dst.y, src.x / textureWidth, src.y / textureHeight, textureIndex);
     // Top right vertex
-    const v2: VertexData = new VertexData(new Vec2(dst.x + dst.w, dst.y), 
-      new Vec2((src.x + src.w) / textureWidth, src.y / textureHeight), textureIndex);
+    BatchRenderer.setVertexData(currentVertexIndex + 1, dst.x + dst.w, dst.y, (src.x + src.w) / textureWidth, src.y / textureHeight, textureIndex);
     // Bottom left vertex
-    const v3: VertexData = new VertexData(new Vec2(dst.x, dst.y + dst.h), 
-      new Vec2(src.x / textureWidth, (src.y + src.h) / textureHeight), textureIndex);
+    BatchRenderer.setVertexData(currentVertexIndex + 2, dst.x, dst.y + dst.h, src.x / textureWidth, (src.y + src.h) / textureHeight, textureIndex);
     // Bottom right vertex
-    const v4: VertexData = new VertexData(new Vec2(dst.x + dst.w, dst.y + dst.h), 
-      new Vec2((src.x + src.w) / textureWidth, (src.y + src.h) / textureHeight), textureIndex);
+    BatchRenderer.setVertexData(currentVertexIndex + 3, dst.x + dst.w, dst.y + dst.h, (src.x + src.w) / textureWidth, (src.y + src.h) / textureHeight, textureIndex);
 
-    const currentVertexIndex = Number(BatchRenderer.pendingQuads) * VERTICES_PER_QUAD;
-    BatchRenderer.setVertexData(currentVertexIndex    , v1);
-    BatchRenderer.setVertexData(currentVertexIndex + 1, v2);
-    BatchRenderer.setVertexData(currentVertexIndex + 2, v3);
-    BatchRenderer.setVertexData(currentVertexIndex + 3, v4);
-
-    BatchRenderer.pendingQuads += 1n;
+    BatchRenderer.pendingQuads += 1;
   }
 
-  private static setVertexData(index: number, vertexData: VertexData) {
-    const startingIndex = index * VertexData.F32_SIZE;
-    BatchRenderer.vertexBufferData[startingIndex    ] = vertexData.pos.x;
-    BatchRenderer.vertexBufferData[startingIndex + 1] = vertexData.pos.y;
-    BatchRenderer.vertexBufferData[startingIndex + 2] = vertexData.texCoord.x;
-    BatchRenderer.vertexBufferData[startingIndex + 3] = vertexData.texCoord.y;
-    BatchRenderer.vertexBufferData[startingIndex + 4] = vertexData.textureId;
+  private static setVertexData(index: number, x: number, y: number, texCoordX: number, texCoordY: number, textureId: number) {
+    const startingIndex = index * VertexData.F32_LENGTH;
+    BatchRenderer.vertexBufferData[startingIndex    ] = x;
+    BatchRenderer.vertexBufferData[startingIndex + 1] = y;
+    BatchRenderer.vertexBufferData[startingIndex + 2] = texCoordX;
+    BatchRenderer.vertexBufferData[startingIndex + 3] = texCoordY;
+    BatchRenderer.vertexBufferData[startingIndex + 4] = textureId;
   }
 
   private static flushIfQuadLimitReached() {
-    if (Number(BatchRenderer.pendingQuads) == MAX_QUADS_PER_BATCH) {
+    if (BatchRenderer.pendingQuads >= MAX_QUADS_PER_BATCH) {
       BatchRenderer.flush();
     }
   }
@@ -280,10 +273,10 @@ export class BatchRenderer {
     // Fill remaining slots with white texture - WebGPU does not allow unbound slots
     const UNBOUND_TEXTURE_BINDS_START = TEXTURE_BINDS_START + BatchRenderer.texturesUsedThisBatch.length;
     for (let i = UNBOUND_TEXTURE_BINDS_START; i < MAX_TEXTURE_SLOTS + TEXTURE_BINDS_START; i++) {
-     bindGroupEntries.push({ 
+     bindGroupEntries.push({
        binding: i,
        resource: BatchRenderer.whiteTexture.getInternalTexture(),
-     }) 
+     })
     }
 
     BatchRenderer.bindGroup = BatchRenderer.device.createBindGroup({
@@ -291,11 +284,11 @@ export class BatchRenderer {
       entries: bindGroupEntries
     })
 
-    BatchRenderer.device.queue.writeBuffer(BatchRenderer.vertexBuffer, 0, 
-      BatchRenderer.vertexBufferData, 0,  
-      Number(BatchRenderer.pendingQuads) * VertexData.F32_SIZE * VERTICES_PER_QUAD);
+    BatchRenderer.device.queue.writeBuffer(BatchRenderer.vertexBuffer, 0,
+      BatchRenderer.vertexBufferData, 0,
+      BatchRenderer.pendingQuads * VertexData.F32_LENGTH * VERTICES_PER_QUAD);
 
-    const encoder = BatchRenderer.device.createCommandEncoder({ 
+    const encoder = BatchRenderer.device.createCommandEncoder({
       label: "Sprite Batch Main Command Encoder"
     })
 
@@ -312,18 +305,18 @@ export class BatchRenderer {
     pass.setVertexBuffer(0, BatchRenderer.vertexBuffer);
     pass.setIndexBuffer(BatchRenderer.indexBuffer, "uint32");
     pass.setBindGroup(0, BatchRenderer.bindGroup);
-    const nIndicesToDraw = Number(BatchRenderer.pendingQuads) * INDICES_PER_QUAD;
+    const nIndicesToDraw = BatchRenderer.pendingQuads * INDICES_PER_QUAD;
     pass.drawIndexed(nIndicesToDraw);
     pass.end();
 
     BatchRenderer.device.queue.submit([encoder.finish()]);
 
     //Update rendering stats
-    BatchRenderer.stats.quadsRendered += Number(BatchRenderer.pendingQuads);
+    BatchRenderer.stats.quadsRendered += BatchRenderer.pendingQuads;
     BatchRenderer.stats.batches += 1;
-    BatchRenderer.stats.verticesRendered += Number(BatchRenderer.pendingQuads) * VERTICES_PER_QUAD;
+    BatchRenderer.stats.verticesRendered += BatchRenderer.pendingQuads * VERTICES_PER_QUAD;
 
-    BatchRenderer.pendingQuads = 0n;
+    BatchRenderer.pendingQuads = 0;
     BatchRenderer.texturesUsedThisBatch = [];
   }
 
@@ -332,7 +325,7 @@ export class BatchRenderer {
 
     if (texIdx != -1) return texIdx;
 
-    if (BatchRenderer.texturesUsedThisBatch.length >= MAX_QUADS_PER_BATCH - 1) {
+    if (BatchRenderer.texturesUsedThisBatch.length >= MAX_TEXTURE_SLOTS - 1) {
       BatchRenderer.flush();
     }
 
