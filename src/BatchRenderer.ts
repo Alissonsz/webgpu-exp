@@ -1,5 +1,6 @@
+import { Camera } from './Camera';
 import { Texture } from './Texture';
-import { Vec2, Rect } from './Vec'
+import { Rect, Vec2 } from "./Vec";
 import spriteBatchShaderCode from './shaders/sprite_batch.wgsl'
 
 const F32_SIZE               = 4; // F32 has 4 bytes
@@ -9,12 +10,20 @@ const MAX_TEXTURE_SLOTS      = 16;
 const VERTICES_PER_QUAD      = 4;
 const INDICES_PER_QUAD       = 6;
 
+type Color = {
+  r: number,
+  g: number,
+  b: number,
+  a: number
+};
+
 export class VertexData {
   pos: Vec2;
   texCoords: Vec2;
   textureId: number;
+  color: Color;
 
-  static F32_LENGTH: number = 5; // Vec2 + Vec2 + number
+  static F32_LENGTH: number = 9; // Vec2 + Vec2 + number + Color
 
   constructor(pos: Vec2, texCoords: Vec2, textureId: number) {
     this.pos = pos;
@@ -57,6 +66,10 @@ export class BatchRenderer {
   private static viewMatrixBuffer: GPUBuffer;
   private static texturesUsedThisBatch: Array<GPUTexture> = [];
   private static whiteTexture: Texture;
+  // Helpers
+  private static originUnitRect: Rect;
+  private static whiteColor: Color;
+  private static camera: Camera;
 
   static stats: BatchRendererStats;
 
@@ -86,6 +99,8 @@ export class BatchRenderer {
     BatchRenderer.initIndexBuffer();
     BatchRenderer.initPipeline();
     BatchRenderer.initWhiteTexture();
+    BatchRenderer.originUnitRect = new Rect(0, 0, 1, 1);
+    BatchRenderer.whiteColor = { r: 1, g: 1, b: 1, a: 1 };
 
     BatchRenderer.hasInitialized = true;
 
@@ -129,6 +144,11 @@ export class BatchRenderer {
         format: "float32",
         offset: Vec2.byteLength() * 2,
         shaderLocation: 2
+      },
+      {
+        format: "float32x4",
+        offset: Vec2.byteLength() * 2 + F32_SIZE,
+        shaderLocation: 3,
       }]
     }
 
@@ -200,7 +220,7 @@ export class BatchRenderer {
   }
 
   // TODO: Use a camera instead
-  static begin(viewMatrix: ArrayBufferLike) {
+  static begin(camera: Camera) {
     BatchRenderer.stats.clear();
 
     // TODO: Only for debug
@@ -208,16 +228,14 @@ export class BatchRenderer {
       throw new Error("Sprite batch state is invalid: Calling begin with a non-zero batch index")
     }
 
-    if (viewMatrix.byteLength != 64) throw new Error("View matrix array has unsupported size");
-
-    BatchRenderer.device.queue.writeBuffer(BatchRenderer.viewMatrixBuffer, 0, viewMatrix);
+    BatchRenderer.device.queue.writeBuffer(BatchRenderer.viewMatrixBuffer, 0, camera.getViewProjectionMatrix());
   }
 
   static end() {
     BatchRenderer.flush();
   }
 
-  static drawSprite(texture: Texture, src: Rect, dst: Rect) {
+  static drawSprite(texture: Texture, src: Rect, dst: Rect, color?: Color) {
     BatchRenderer.flushIfQuadLimitReached();
     const textureIndex = BatchRenderer.getTextureSlot(texture);
 
@@ -226,24 +244,36 @@ export class BatchRenderer {
 
     const currentVertexIndex = BatchRenderer.pendingQuads * VERTICES_PER_QUAD;
     // Top left vertex
-    BatchRenderer.setVertexData(currentVertexIndex    , dst.x, dst.y, src.x / textureWidth, src.y / textureHeight, textureIndex);
+    BatchRenderer.setVertexData(currentVertexIndex    , dst.x, dst.y,
+      src.x / textureWidth, src.y / textureHeight, textureIndex, color ? color : BatchRenderer.whiteColor);
     // Top right vertex
-    BatchRenderer.setVertexData(currentVertexIndex + 1, dst.x + dst.w, dst.y, (src.x + src.w) / textureWidth, src.y / textureHeight, textureIndex);
+    BatchRenderer.setVertexData(currentVertexIndex + 1, dst.x + dst.w, dst.y,
+      (src.x + src.w) / textureWidth, src.y / textureHeight, textureIndex, color ? color : BatchRenderer.whiteColor);
     // Bottom left vertex
-    BatchRenderer.setVertexData(currentVertexIndex + 2, dst.x, dst.y + dst.h, src.x / textureWidth, (src.y + src.h) / textureHeight, textureIndex);
+    BatchRenderer.setVertexData(currentVertexIndex + 2, dst.x, dst.y + dst.h,
+      src.x / textureWidth, (src.y + src.h) / textureHeight, textureIndex, color ? color : BatchRenderer.whiteColor);
     // Bottom right vertex
-    BatchRenderer.setVertexData(currentVertexIndex + 3, dst.x + dst.w, dst.y + dst.h, (src.x + src.w) / textureWidth, (src.y + src.h) / textureHeight, textureIndex);
+    BatchRenderer.setVertexData(currentVertexIndex + 3, dst.x + dst.w, dst.y + dst.h,
+      (src.x + src.w) / textureWidth, (src.y + src.h) / textureHeight, textureIndex, color ? color : BatchRenderer.whiteColor);
 
     BatchRenderer.pendingQuads += 1;
   }
 
-  private static setVertexData(index: number, x: number, y: number, texCoordX: number, texCoordY: number, textureId: number) {
+  static drawRect(dst: Rect, color: Color) {
+    BatchRenderer.drawSprite(BatchRenderer.whiteTexture, BatchRenderer.originUnitRect, dst, color);
+  }
+
+  private static setVertexData(index: number, x: number, y: number, texCoordX: number, texCoordY: number, textureId: number, color: Color) {
     const startingIndex = index * VertexData.F32_LENGTH;
     BatchRenderer.vertexBufferData[startingIndex    ] = x;
     BatchRenderer.vertexBufferData[startingIndex + 1] = y;
     BatchRenderer.vertexBufferData[startingIndex + 2] = texCoordX;
     BatchRenderer.vertexBufferData[startingIndex + 3] = texCoordY;
     BatchRenderer.vertexBufferData[startingIndex + 4] = textureId;
+    BatchRenderer.vertexBufferData[startingIndex + 5] = color.r;
+    BatchRenderer.vertexBufferData[startingIndex + 6] = color.g;
+    BatchRenderer.vertexBufferData[startingIndex + 7] = color.b;
+    BatchRenderer.vertexBufferData[startingIndex + 8] = color.a;
   }
 
   private static flushIfQuadLimitReached() {
@@ -261,7 +291,11 @@ export class BatchRenderer {
         {
           binding: 1,
           resource: BatchRenderer.sampler,
-        }
+        },
+      {
+        binding: 2,
+        resource: BatchRenderer.whiteTexture.getInternalTexture(),
+      }
     ];
 
     const TEXTURE_BINDS_START = bindGroupEntries.length;
@@ -272,7 +306,7 @@ export class BatchRenderer {
 
     // Fill remaining slots with white texture - WebGPU does not allow unbound slots
     const UNBOUND_TEXTURE_BINDS_START = TEXTURE_BINDS_START + BatchRenderer.texturesUsedThisBatch.length;
-    for (let i = UNBOUND_TEXTURE_BINDS_START; i < MAX_TEXTURE_SLOTS + TEXTURE_BINDS_START; i++) {
+    for (let i = UNBOUND_TEXTURE_BINDS_START; i < MAX_TEXTURE_SLOTS + TEXTURE_BINDS_START - 1; i++) {
      bindGroupEntries.push({
        binding: i,
        resource: BatchRenderer.whiteTexture.getInternalTexture(),
@@ -323,12 +357,12 @@ export class BatchRenderer {
   private static getTextureSlot(texture: Texture): number {
     const texIdx = BatchRenderer.texturesUsedThisBatch.indexOf(texture.getInternalTexture());
 
-    if (texIdx != -1) return texIdx;
+    if (texIdx != -1) return texIdx + 1;
 
     if (BatchRenderer.texturesUsedThisBatch.length >= MAX_TEXTURE_SLOTS - 1) {
       BatchRenderer.flush();
     }
 
-    return BatchRenderer.texturesUsedThisBatch.push(texture.getInternalTexture()) - 1;
+    return BatchRenderer.texturesUsedThisBatch.push(texture.getInternalTexture());
   }
 }

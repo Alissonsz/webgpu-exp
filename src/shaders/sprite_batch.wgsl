@@ -22,22 +22,24 @@ diagnostic(off, derivative_uniformity);
 struct VertexInput {
   @location(0) pos: vec2f,
   @location(1) texCoords: vec2f,
-  @location(2) texId: f32
+  @location(2) texId: f32,
+  @location(3) color: vec4f,
 };
 
 struct VertexOutput {
   @builtin(position) pos: vec4f,
   @location(0) texCoords: vec2f,
-  @location(1) vertexColor: vec4f,
-  @location(2) texId: f32
+  @location(1) texId: f32,
+  @location(2) color: vec4f,
 };
 
 @vertex
 fn vertexMain(vertexInput: VertexInput) -> VertexOutput {
   var output: VertexOutput;
-  output.pos = view * vec4f(vertexInput.pos, 0, 1);
+  output.pos = view * vec4f(vertexInput.pos, -1, 1);
   output.texCoords = vertexInput.texCoords;
   output.texId = vertexInput.texId;
+  output.color = vertexInput.color;
 
   return output;
 }
@@ -45,22 +47,22 @@ fn vertexMain(vertexInput: VertexInput) -> VertexOutput {
 @fragment
 fn fragmentMain(vertexOutput: VertexOutput) -> @location(0) vec4<f32> {
   switch u32(vertexOutput.texId) {
-    case 0:  { return textureSample(tex0,  texSampler, vertexOutput.texCoords); }
-    case 1:  { return textureSample(tex1,  texSampler, vertexOutput.texCoords); }
-    case 2:  { return textureSample(tex2,  texSampler, vertexOutput.texCoords); }
-    case 3:  { return textureSample(tex3,  texSampler, vertexOutput.texCoords); }
-    case 4:  { return textureSample(tex4,  texSampler, vertexOutput.texCoords); }
-    case 5:  { return textureSample(tex5,  texSampler, vertexOutput.texCoords); }
-    case 6:  { return textureSample(tex6,  texSampler, vertexOutput.texCoords); }
-    case 7:  { return textureSample(tex7,  texSampler, vertexOutput.texCoords); }
-    case 8:  { return textureSample(tex8,  texSampler, vertexOutput.texCoords); }
-    case 9:  { return textureSample(tex9,  texSampler, vertexOutput.texCoords); }
-    case 10: { return textureSample(tex10, texSampler, vertexOutput.texCoords); }
-    case 11: { return textureSample(tex11, texSampler, vertexOutput.texCoords); }
-    case 12: { return textureSample(tex12, texSampler, vertexOutput.texCoords); }
-    case 13: { return textureSample(tex13, texSampler, vertexOutput.texCoords); }
-    case 14: { return textureSample(tex14, texSampler, vertexOutput.texCoords); }
-    case 15: { return textureSample(tex15, texSampler, vertexOutput.texCoords); }
+    case 0:  { return textureSample(tex0,  texSampler, vertexOutput.texCoords) * vertexOutput.color; }
+    case 1:  { return textureSample(tex1,  texSampler, vertexOutput.texCoords) * vertexOutput.color; }
+    case 2:  { return textureSample(tex2,  texSampler, vertexOutput.texCoords) * vertexOutput.color; }
+    case 3:  { return textureSample(tex3,  texSampler, vertexOutput.texCoords) * vertexOutput.color; }
+    case 4:  { return textureSample(tex4,  texSampler, vertexOutput.texCoords) * vertexOutput.color; }
+    case 5:  { return textureSample(tex5,  texSampler, vertexOutput.texCoords) * vertexOutput.color; }
+    case 6:  { return textureSample(tex6,  texSampler, vertexOutput.texCoords) * vertexOutput.color; }
+    case 7:  { return textureSample(tex7,  texSampler, vertexOutput.texCoords) * vertexOutput.color; }
+    case 8:  { return textureSample(tex8,  texSampler, vertexOutput.texCoords) * vertexOutput.color; }
+    case 9:  { return textureSample(tex9,  texSampler, vertexOutput.texCoords) * vertexOutput.color; }
+    case 10: { return textureSample(tex10, texSampler, vertexOutput.texCoords) * vertexOutput.color; }
+    case 11: { return textureSample(tex11, texSampler, vertexOutput.texCoords) * vertexOutput.color; }
+    case 12: { return textureSample(tex12, texSampler, vertexOutput.texCoords) * vertexOutput.color; }
+    case 13: { return textureSample(tex13, texSampler, vertexOutput.texCoords) * vertexOutput.color; }
+    case 14: { return textureSample(tex14, texSampler, vertexOutput.texCoords) * vertexOutput.color; }
+    case 15: { return textureSample(tex15, texSampler, vertexOutput.texCoords) * vertexOutput.color; }
     default: { return vec4f(0.5, 0.5, 0.6, 1.0); }
   }
 }
