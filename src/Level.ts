@@ -1,4 +1,4 @@
-import { mat4 } from "wgpu-matrix";
+import { mat4 } from "@gustavo4passos/wgpu-matrix";
 import vertexShaderCode from "./shaders/vertex.wgsl";
 import fragmentShaderCode from "./shaders/fragment.wgsl";
 import { LDtkData, LevelData } from "./types";

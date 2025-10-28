@@ -1,5 +1,4 @@
-import { mat4 } from "wgpu-matrix";
-import { Vec2 } from "./Vec";
+import { mat4, Vec2 } from "@gustavo4passos/wgpu-matrix";
 
 export class Camera {
     pos: Vec2;
@@ -11,7 +10,7 @@ export class Camera {
     }
 
     getViewProjectionMatrix(): Float32Array { 
-        const ortho = mat4.ortho(0, this.dimensions.x, this.dimensions.y, 0, 0.1, 100);
+        const ortho = mat4.ortho2d(0, this.dimensions.x, this.dimensions.y, 0);
         const view = mat4.translate(mat4.identity(), [-this.pos.x, -this.pos.y, 0]);
         return mat4.mul(ortho, view);
     }

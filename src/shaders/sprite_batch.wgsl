@@ -36,7 +36,7 @@ struct VertexOutput {
 @vertex
 fn vertexMain(vertexInput: VertexInput) -> VertexOutput {
   var output: VertexOutput;
-  output.pos = view * vec4f(vertexInput.pos, -1, 1);
+  output.pos = view * vec4f(vertexInput.pos, 1, 1);
   output.texCoords = vertexInput.texCoords;
   output.texId = vertexInput.texId;
   output.color = vertexInput.color;

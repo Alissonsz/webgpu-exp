@@ -1,6 +1,7 @@
 import { Camera } from './Camera';
 import { Texture } from './Texture';
-import { Rect, Vec2 } from "./Vec";
+import { Rect } from "./Rect";
+import { Vec2 } from "@gustavo4passos/wgpu-matrix"
 import spriteBatchShaderCode from './shaders/sprite_batch.wgsl'
 
 const F32_SIZE               = 4; // F32 has 4 bytes
@@ -128,6 +129,7 @@ export class BatchRenderer {
   }
 
   private static initPipeline() {
+    const VEC2_BYTE_LENGTH = F32_SIZE * 2;
     const vertexBufferLayout: GPUVertexBufferLayout = {
       arrayStride: VertexData.F32_LENGTH * F32_SIZE,
       attributes: [{
@@ -138,16 +140,16 @@ export class BatchRenderer {
       }, {
         // TexCoord attribute
         format: "float32x2",
-        offset: Vec2.byteLength(),
+        offset: VEC2_BYTE_LENGTH,
         shaderLocation: 1
       }, {
         format: "float32",
-        offset: Vec2.byteLength() * 2,
+        offset: VEC2_BYTE_LENGTH * 2,
         shaderLocation: 2
       },
       {
         format: "float32x4",
-        offset: Vec2.byteLength() * 2 + F32_SIZE,
+        offset: VEC2_BYTE_LENGTH * 2 + F32_SIZE,
         shaderLocation: 3,
       }]
     }

@@ -11,14 +11,14 @@
   "author": "",
   "license": "ISC",
   "packageManager": "pnpm@10.14.0",
-  "dependencies": {
-    "wgpu-matrix": "^3.4.0"
-  },
   "devDependencies": {
     "@webgpu/types": "^0.1.65",
     "prettier": "^3.6.2",
     "typescript": "^5.9.3",
     "vite": "^7.1.9",
     "vite-raw-plugin": "^1.0.2"
+  },
+  "dependencies": {
+    "@gustavo4passos/wgpu-matrix": "^3.6.0"
   }
 }
