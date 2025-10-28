@@ -1,7 +1,7 @@
 import vertexShaderCode from "./shaders/vertex.wgsl";
 import fragmentShaderCode from "./shaders/fragment.wgsl";
 import tileMapUrl from "../assets/tilemap_packed.png";
-import { mat4, vec3, Vec3 } from "wgpu-matrix";
+import { mat4, vec3, Vec3 } from "@gustavo4passos/wgpu-matrix";
 
 type RenderNonVoidReturn = {
   passEncoder: GPURenderPassEncoder;
