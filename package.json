@@ -19,6 +19,6 @@
     "vite-raw-plugin": "^1.0.2"
   },
   "dependencies": {
-    "@gustavo4passos/wgpu-matrix": "^3.6.0"
+    "@gustavo4passos/wgpu-matrix": "^3.6.2"
   }
 }
