@@ -1,7 +1,12 @@
 import { initializeWebgpu } from "./renderer";
-import { mat4 } from "wgpu-matrix";
+import { mat4, vec2 } from "@gustavo4passos/wgpu-matrix";
 import { Level } from "./Level";
 import { InputState } from "./InputState";
+import { World, Components } from "./ecs";
+import { TagComponent, ActivationStatusComponent, SpriteComponent, CameraComponent } from "./ecs/ComponentTypes.ts";
+import { Camera } from "./Camera.ts";
+import { RenderSystem } from "./RenderSystem.ts";
+import { BatchRenderer } from "./BatchRenderer.ts";
 
 window.addEventListener("load", async () => {
   console.log("Window loaded");
@@ -45,6 +50,20 @@ window.addEventListener("load", async () => {
     console.log("Level initialized");
   });
 
+  BatchRenderer.init(device, context);
+
+  // ECS Example
+  const w = new World();
+
+  const renderSystem = new RenderSystem();
+  w.addSystem(renderSystem);
+
+  const e = w.createEntity("Player", true, vec2.create(90, 10), vec2.create(100, 100));
+  e.addComponent<SpriteComponent>(new SpriteComponent({ r: 1, g: 0.5, b: 0.1, a: 1}));
+
+  const c = w.createEntity("Camera", true, vec2.create(0, 0), vec2.create(0, 0));
+  c.addComponent(new CameraComponent(new Camera(vec2.create(0, 0), vec2.create(canvas.width, canvas.height)), true));
+
   let lastRender = new Date().getMilliseconds();
   const animationFrame = requestAnimationFrame(() => {
     const now = new Date().getMilliseconds();
@@ -81,5 +100,6 @@ window.addEventListener("load", async () => {
 
     passEncoder.end();
     device.queue.submit([commandEncoder.finish()]);
+
   });
 });

@@ -1,18 +1,17 @@
-import { Entity } from "./Entity";
+import { OpaqueEntity } from "./EntityManager.ts";
 
 export interface Component {}
 
 export type ComponentClass<T extends Component> = new (...args: any[]) => T;
 
 export class ComponentManager {
-  private components: Map<string, Map<Entity, Component>> = new Map();
+  components: Map<string, Map<OpaqueEntity, Component>> = new Map();
 
   addComponent<T extends Component>(
-    entity: Entity,
-    componentClass: ComponentClass<T>,
+    entity: OpaqueEntity,
     component: T
   ): void {
-    const componentName = componentClass.name;
+    const componentName = component.constructor.name;
     if (!this.components.has(componentName)) {
       this.components.set(componentName, new Map());
     }
@@ -20,7 +19,7 @@ export class ComponentManager {
   }
 
   removeComponent<T extends Component>(
-    entity: Entity,
+    entity: OpaqueEntity,
     componentClass: ComponentClass<T>
   ): void {
     const componentName = componentClass.name;
@@ -31,7 +30,7 @@ export class ComponentManager {
   }
 
   getComponent<T extends Component>(
-    entity: Entity,
+    entity: OpaqueEntity,
     componentClass: ComponentClass<T>
   ): T | undefined {
     const componentName = componentClass.name;
@@ -40,14 +39,14 @@ export class ComponentManager {
   }
 
   hasComponent<T extends Component>(
-    entity: Entity,
+    entity: OpaqueEntity,
     componentClass: ComponentClass<T>
   ): boolean {
     const componentName = componentClass.name;
     return this.components.get(componentName)?.has(entity) ?? false;
   }
 
-  getAllComponentsForEntity(entity: Entity): Component[] {
+  getAllComponentsForEntity(entity: OpaqueEntity): Component[] {
     const result: Component[] = [];
     for (const componentMap of this.components.values()) {
       const component = componentMap.get(entity);
@@ -60,13 +59,13 @@ export class ComponentManager {
 
   getEntitiesWithComponent<T extends Component>(
     componentClass: ComponentClass<T>
-  ): Entity[] {
+  ): OpaqueEntity[] {
     const componentName = componentClass.name;
     const componentMap = this.components.get(componentName);
     return componentMap ? Array.from(componentMap.keys()) : [];
   }
 
-  removeAllComponents(entity: Entity): void {
+  removeAllComponents(entity: OpaqueEntity): void {
     for (const componentMap of this.components.values()) {
       componentMap.delete(entity);
     }

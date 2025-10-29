@@ -1,27 +1,31 @@
-import { Entity } from "./Entity";
-import { ComponentManager, ComponentClass, Component } from "./Component";
+import { OpaqueEntity } from "./EntityManager.ts";
+import { ComponentClass, Component } from "./Component";
+import { World } from "./World";
 
 export abstract class System {
-  protected componentManager: ComponentManager;
+  protected world: World;
   protected requiredComponents: ComponentClass<Component>[] = [];
 
-  constructor(componentManager: ComponentManager) {
-    this.componentManager = componentManager;
+  protected constructor() { }
+
+  setWorld(world: World) {
+    this.world = world;
   }
 
-  abstract update(deltaTime: number, entities: Entity[]): void;
+  abstract update(deltaTime: number): void;
 
-  getEntitiesWithRequiredComponents(): Entity[] {
+  getEntitiesWithRequiredComponents(): OpaqueEntity[] {
     if (this.requiredComponents.length === 0) {
       return [];
     }
 
+    const componentManager = this.world.getComponentManager();
     const firstComponent = this.requiredComponents[0];
-    const candidateEntities = this.componentManager.getEntitiesWithComponent(firstComponent);
+    const candidateEntities = componentManager.getEntitiesWithComponent(firstComponent);
 
     return candidateEntities.filter(entity =>
       this.requiredComponents.every(component =>
-        this.componentManager.hasComponent(entity, component)
+        componentManager.hasComponent(entity, component)
       )
     );
   }

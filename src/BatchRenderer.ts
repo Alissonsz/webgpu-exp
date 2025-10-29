@@ -11,7 +11,7 @@ const MAX_TEXTURE_SLOTS      = 16;
 const VERTICES_PER_QUAD      = 4;
 const INDICES_PER_QUAD       = 6;
 
-type Color = {
+export type Color = {
   r: number,
   g: number,
   b: number,
@@ -262,6 +262,7 @@ export class BatchRenderer {
   }
 
   static drawRect(dst: Rect, color: Color) {
+    console.log("Destination: ", dst);
     BatchRenderer.drawSprite(BatchRenderer.whiteTexture, BatchRenderer.originUnitRect, dst, color);
   }
 
