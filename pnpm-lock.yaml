@@ -9,8 +9,8 @@ importers:
   .:
     dependencies:
       '@gustavo4passos/wgpu-matrix':
-        specifier: ^3.6.0
-        version: 3.6.0
+        specifier: ^3.6.2
+        version: 3.6.2
     devDependencies:
       '@webgpu/types':
         specifier: ^0.1.65
@@ -186,8 +186,8 @@ packages:
     cpu: [x64]
     os: [win32]
 
-  '@gustavo4passos/wgpu-matrix@3.6.0':
-    resolution: {integrity: sha512-N1YRv5Opz5xl9Ogp2CtHPHyP9nOi/sttgoLHt2PcHLYjcz+5acDFGut979yUlxABSZbLm8pZ66CP3yfdNqEhLA==}
+  '@gustavo4passos/wgpu-matrix@3.6.2':
+    resolution: {integrity: sha512-JGJv03wIBWYCRHfgJLCTerg7cjr+J9iKyb2TnN4RNr8ntI6/B5SIjbc7kv8D5EbcY47RxRLdPCQ0iI850LEyCQ==}
 
   '@rollup/rollup-android-arm-eabi@4.52.4':
     resolution: {integrity: sha512-BTm2qKNnWIQ5auf4deoetINJm2JzvihvGb9R6K/ETwKLql/Bb3Eg2H1FBp1gUb4YGbydMA3jcmQTR73q7J+GAA==}
@@ -486,7 +486,7 @@ snapshots:
   '@esbuild/win32-x64@0.25.10':
     optional: true
 
-  '@gustavo4passos/wgpu-matrix@3.6.0':
+  '@gustavo4passos/wgpu-matrix@3.6.2':
     dependencies:
       wgpu-matrix: link:../software/node-v22.20.0-win-x64/pnpm-bin/global/5/node_modules/gustavo@passos/wgpu-matrix
 
