@@ -262,7 +262,6 @@ export class BatchRenderer {
   }
 
   static drawRect(dst: Rect, color: Color) {
-    console.log("Destination: ", dst);
     BatchRenderer.drawSprite(BatchRenderer.whiteTexture, BatchRenderer.originUnitRect, dst, color);
   }
 
