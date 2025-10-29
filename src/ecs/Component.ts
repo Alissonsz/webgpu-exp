@@ -7,10 +7,7 @@ export type ComponentClass<T extends Component> = new (...args: any[]) => T;
 export class ComponentManager {
   components: Map<string, Map<OpaqueEntity, Component>> = new Map();
 
-  addComponent<T extends Component>(
-    entity: OpaqueEntity,
-    component: T
-  ): void {
+  addComponent<T extends Component>(entity: OpaqueEntity, component: T): void {
     const componentName = component.constructor.name;
     if (!this.components.has(componentName)) {
       this.components.set(componentName, new Map());
@@ -18,10 +15,7 @@ export class ComponentManager {
     this.components.get(componentName)!.set(entity, component);
   }
 
-  removeComponent<T extends Component>(
-    entity: OpaqueEntity,
-    componentClass: ComponentClass<T>
-  ): void {
+  removeComponent<T extends Component>(entity: OpaqueEntity, componentClass: ComponentClass<T>): void {
     const componentName = componentClass.name;
     const componentMap = this.components.get(componentName);
     if (componentMap) {
@@ -29,19 +23,19 @@ export class ComponentManager {
     }
   }
 
-  getComponent<T extends Component>(
-    entity: OpaqueEntity,
-    componentClass: ComponentClass<T>
-  ): T | undefined {
+  getComponent<T extends Component>(entity: OpaqueEntity, componentClass: ComponentClass<T>): T | undefined {
     const componentName = componentClass.name;
     const componentMap = this.components.get(componentName);
     return componentMap?.get(entity) as T | undefined;
   }
 
-  hasComponent<T extends Component>(
-    entity: OpaqueEntity,
-    componentClass: ComponentClass<T>
-  ): boolean {
+  getComponentsOfType<T extends Component>(componentClass: ComponentClass<T>): Map<OpaqueEntity, T> {
+    const componentName = componentClass.name;
+    const componentMap = this.components.get(componentName);
+    return (componentMap as Map<OpaqueEntity, T>) || new Map();
+  }
+
+  hasComponent<T extends Component>(entity: OpaqueEntity, componentClass: ComponentClass<T>): boolean {
     const componentName = componentClass.name;
     return this.components.get(componentName)?.has(entity) ?? false;
   }
@@ -57,9 +51,7 @@ export class ComponentManager {
     return result;
   }
 
-  getEntitiesWithComponent<T extends Component>(
-    componentClass: ComponentClass<T>
-  ): OpaqueEntity[] {
+  getEntitiesWithComponent<T extends Component>(componentClass: ComponentClass<T>): OpaqueEntity[] {
     const componentName = componentClass.name;
     const componentMap = this.components.get(componentName);
     return componentMap ? Array.from(componentMap.keys()) : [];

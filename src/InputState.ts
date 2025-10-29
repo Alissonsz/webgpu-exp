@@ -1,4 +1,4 @@
-enum Keys {
+export enum Keys {
   ArrowUp,
   ArrowDown,
   ArrowLeft,
@@ -41,5 +41,9 @@ export class InputState {
 
   static isKeyPressed(key: Keys): boolean {
     return InputState.keyboardState[key];
+  }
+
+  static getKeyboardState(): Record<Keys, boolean> {
+    return InputState.keyboardState;
   }
 }

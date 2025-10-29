@@ -1,10 +1,10 @@
 import { OpaqueEntity, EntityManager } from "./EntityManager.ts";
 import { Component, ComponentClass, ComponentManager } from "./Component";
 import { System } from "./System";
-import { ActivationStatusComponent, TagComponent, TransformComponent } from "./ComponentTypes.ts";
+import { ActivationStatusComponent, TagComponent, TransformComponent } from "../components";
 import { Vec2 } from "@gustavo4passos/wgpu-matrix";
 
-class Entity {
+export class Entity {
   private entity: OpaqueEntity;
   private world: World;
 
@@ -13,27 +13,19 @@ class Entity {
     this.world = world;
   }
 
-  addComponent<T extends Component>(
-    component: T
-  ): void {
+  addComponent<T extends Component>(component: T): void {
     this.world.addComponent(this.entity, component);
   }
 
-  removeComponent<T extends Component>(
-    componentClass: ComponentClass<T>
-  ): void {
+  removeComponent<T extends Component>(componentClass: ComponentClass<T>): void {
     this.world.removeComponent(this.entity, componentClass);
   }
 
-  getComponent<T extends Component>(
-    componentClass: ComponentClass<T>
-  ): T | undefined {
+  getComponent<T extends Component>(componentClass: ComponentClass<T>): T | undefined {
     return this.world.getComponent(this.entity, componentClass);
   }
 
-  hasComponent<T extends Component>(
-    componentClass: ComponentClass<T>
-  ): boolean {
+  hasComponent<T extends Component>(componentClass: ComponentClass<T>): boolean {
     return this.world.hasComponent(this.entity, componentClass);
   }
 }
@@ -62,36 +54,25 @@ export class World {
     this.entityManager.destroyEntity(entity);
   }
 
-  addComponent<T extends Component>(
-    entity: OpaqueEntity,
-    component: T
-  ): void {
+  addComponent<T extends Component>(entity: OpaqueEntity, component: T): void {
     this.componentManager.addComponent(entity, component);
   }
 
-  removeComponent<T extends Component>(
-    entity: OpaqueEntity,
-    componentClass: ComponentClass<T>
-  ): void {
+  removeComponent<T extends Component>(entity: OpaqueEntity, componentClass: ComponentClass<T>): void {
     this.componentManager.removeComponent(entity, componentClass);
   }
 
-  getComponent<T extends Component>(
-    entity: OpaqueEntity,
-    componentClass: ComponentClass<T>
-  ): T | undefined {
+  getComponent<T extends Component>(entity: OpaqueEntity, componentClass: ComponentClass<T>): T | undefined {
     return this.componentManager.getComponent(entity, componentClass);
   }
 
-  hasComponent<T extends Component>(
-    entity: OpaqueEntity,
-    componentClass: ComponentClass<T>
-  ): boolean {
+  hasComponent<T extends Component>(entity: OpaqueEntity, componentClass: ComponentClass<T>): boolean {
     return this.componentManager.hasComponent(entity, componentClass);
   }
 
-  *queryComponents<T extends Component[], C extends { [K in keyof T]: ComponentClass<T[K]> }
-    > (...componentClasses: C): Generator<[Entity, ...T]> {
+  *queryComponents<T extends Component[], C extends { [K in keyof T]: ComponentClass<T[K]> }>(
+    ...componentClasses: C
+  ): Generator<[Entity, ...T]> {
     if (componentClasses.length === 0) return;
 
     const firstClass = componentClasses[0];
@@ -148,6 +129,15 @@ export class World {
 
   getEntityManager(): EntityManager {
     return this.entityManager;
+  }
+
+  getEntityByTag(tag: string): Entity | null {
+    for (const [e, t] of this.componentManager.getComponentsOfType(TagComponent)) {
+      if ((t as TagComponent).tag === tag) {
+        return new Entity(e, this);
+      }
+    }
+    return null;
   }
 
   clear(): void {

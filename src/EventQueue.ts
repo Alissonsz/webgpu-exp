@@ -2,21 +2,26 @@ enum Topic {
   LEVEL_START,
 }
 
-type TopicListener = (arg: any) => void;
-type GameEvent = {
-  topic: Topic;
-  data: any;
-};
+interface EventDataMap {
+  [Topic.LEVEL_START]: { levelNumber: number };
+}
+
+export interface GameEvent<T extends Topic = Topic> {
+  topic: T;
+  data: EventDataMap[T];
+}
+
+type EventHandler<T extends Topic = Topic> = (data: EventDataMap[T]) => void;
 
 export class EventQueue {
   private static queue: Record<Topic, Array<GameEvent>>;
-  private static listeners: Record<Topic, Array<TopicListener>>;
+  private static listeners: Record<Topic, Array<EventHandler>>;
 
   static initialize() {
     this.listeners[Topic.LEVEL_START] = [];
   }
 
-  static registerListener(topic: Topic, listener: TopicListener) {
+  static registerListener(topic: Topic, listener: EventHandler) {
     this.listeners[topic].push(listener);
   }
 
