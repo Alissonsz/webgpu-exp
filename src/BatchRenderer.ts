@@ -213,7 +213,21 @@ export class BatchRenderer {
       fragment: {
         module: BatchRenderer.shaderModule,
         entryPoint: "fragmentMain",
-        targets: [{ format: canvasFormat }],
+        targets: [{
+          format: canvasFormat,
+          blend: {
+            color: {
+              srcFactor: "src-alpha",
+              dstFactor: "one-minus-src-alpha",
+              operation: "add"
+            },
+            alpha: {
+              srcFactor: "one",
+              dstFactor: "one-minus-src-alpha",
+              operation: "add"
+            }
+          }
+        }],
       },
     });
   }

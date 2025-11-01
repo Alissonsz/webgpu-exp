@@ -31,10 +31,10 @@ export class PlayerController extends Script {
     const pos = this.entity.getComponent(TransformComponent);
 
     if (InputState.isKeyPressed(Keys.ArrowRight)) {
-      pos.position.x += 1 * deltaTime;
+      pos.position.x += 0.25 * deltaTime;
     }
     if (InputState.isKeyPressed(Keys.ArrowLeft)) {
-      pos.position.x -= 1 * deltaTime;
+      pos.position.x -= 0.25 * deltaTime;
     }
   }
 }

@@ -3,8 +3,6 @@ import { vec2, Vec2 } from "@gustavo4passos/wgpu-matrix";
 import { Camera } from "../Camera.ts";
 import { Color } from "../BatchRenderer.ts";
 import { Script } from "./scripts.ts";
-import { Entity, World } from "../ecs/World.ts";
-import { InputState, Keys } from "../InputState.ts";
 import { LDtkData, LevelData } from "../types.ts";
 import { Texture } from "../Texture.ts";
 
@@ -47,18 +45,50 @@ export class CameraComponent implements Component {
 
 export class SpriteComponent implements Component {
   sprite: string;
+  texCoord: Vec2;
+  width: number;
+  height: number;
   color: Color;
 
-  constructor(color: Color) {
+  constructor(sprite: string, texCoords: Vec2, width: number, height: number, color?: Color) {
+    this.sprite = sprite;
     this.color = color;
+    this.texCoord = texCoords;
+    this.width = width;
+    this.height = height;
   }
 }
 
 export class ScriptComponent implements Component {
   script: Script;
 
-  constructor(world: World, script: Script) {
+  constructor(script: Script) {
     this.script = script;
+  }
+}
+
+export class AnimationComponent implements Component {
+  frameCount: number;
+  currentFrame: number;
+  frameDuration: number;
+  baseTexCoord: Vec2;
+  elapsedTime: number;
+  isPlaying: boolean;
+  loop: boolean = true;
+
+  constructor(frameCount: number, frameDuration: number, baseTexCoord: Vec2) {
+    this.frameCount = frameCount;
+    this.currentFrame = 0;
+    this.baseTexCoord = baseTexCoord;
+    this.frameDuration = frameDuration;
+    this.elapsedTime = 0;
+    this.isPlaying = true;
+  }
+
+  getCurrentFrameTexSrc(spriteComponent: SpriteComponent): Vec2 {
+    const srcX = this.baseTexCoord.x + this.currentFrame * spriteComponent.width;
+    const srcY = this.baseTexCoord.y;
+    return vec2.create(srcX, srcY);
   }
 }
 

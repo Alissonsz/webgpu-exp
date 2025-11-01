@@ -3,11 +3,11 @@ import { BatchRenderer } from "../BatchRenderer.ts";
 import { CameraComponent, LevelComponent, SpriteComponent, TransformComponent } from "../components/index.ts";
 import { Rect } from "../Rect.ts";
 import { Camera } from "../Camera.ts";
-import { Level } from "../Level.ts";
 import { LevelData } from "../types.ts";
+import { AssetManager } from "../AssetManager.ts";
 
 export class RenderSystem extends System {
-  constructor(level: Level) {
+  constructor() {
     super();
   }
 
@@ -57,15 +57,17 @@ export class RenderSystem extends System {
     }
 
     const r: Rect = { x: 0, y: 0, w: 0, h: 0 };
-    const components = this.world.queryComponents(SpriteComponent, TransformComponent);
 
     for (const [e, s, t] of this.world.queryComponents(SpriteComponent, TransformComponent)) {
+      const spriteComp = s as SpriteComponent;
       r.x = (t as TransformComponent).position.x;
       r.y = (t as TransformComponent).position.y;
       r.w = (t as TransformComponent).scale.x;
       r.h = (t as TransformComponent).scale.y;
 
-      BatchRenderer.drawRect(r, (s as SpriteComponent).color);
+      const src = new Rect(spriteComp.texCoord.x, spriteComp.texCoord.y, spriteComp.width, spriteComp.height);
+
+      BatchRenderer.drawSprite(AssetManager.getTexture(spriteComp.sprite), src, r);
     }
 
     BatchRenderer.end();
