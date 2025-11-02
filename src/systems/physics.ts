@@ -3,17 +3,6 @@ import { PhysicsBodyComponent, TransformComponent } from "../components";
 import { vec2 } from "@gustavo4passos/wgpu-matrix";
 import { Rect } from "../Rect.ts";
 
-enum CollisionSide {
-  TOP,
-  RIGHT,
-  BOTTOM,
-  LEFT
-};
-
-type CollisionInfo = {
-  side: CollisionSide;
-};
-
 export class PhysicsSystem extends System {
   private GRAVITY_ACCELERATION = vec2.create(0, 800);
   constructor() {
@@ -23,35 +12,33 @@ export class PhysicsSystem extends System {
   update(deltaTime: number) {
     const componentGroups = this.world.getComponentGroups(PhysicsBodyComponent, TransformComponent);
 
-    
-    
+    // Pre-instantiate rects and vecs that will be used every frame    
+    let rPrev = new Rect(0, 0, 0, 0);
+    let r1 = new Rect(0, 0, 0, 0);
+    let r2 = new Rect(0, 0, 0, 0);
     for(let i = 0; i < componentGroups.length; i++) { 
-      let rPrev = new Rect(0, 0, 0, 0);
-      let r1 = new Rect(0, 0, 0, 0);
-      let r2 = new Rect(0, 0, 0, 0);
-      let destination = vec2.create(0, 0);
 
       const [e, r, t] = componentGroups[i];
       const physicsBody = (r as PhysicsBodyComponent).physicsBody;
       
-      if (physicsBody.isSolid) continue;
+      if (physicsBody.isSolid) continue; // So far solids can't move
       
       const tc = t as TransformComponent;
-      let position = tc.position;
+      const position = tc.position;
       const scale = tc.scale;
 
       vec2.add(physicsBody.acceleration, this.GRAVITY_ACCELERATION, physicsBody.acceleration);
       const accDt = vec2.mulScalar(physicsBody.acceleration, deltaTime);
       vec2.add(physicsBody.velocity, accDt, physicsBody.velocity);
 
+      // Reset acceleration before next update
       physicsBody.acceleration.x = 0;
       physicsBody.acceleration.y = 0;
       
       if (physicsBody.velocity.x == 0 && physicsBody.velocity.y == 0) continue;
       
       const velocityDt = vec2.mulScalar(physicsBody.velocity, deltaTime);
-      
-      vec2.add(position, velocityDt, destination);
+      let furthestDestination = vec2.add(position, velocityDt);
 
       // Advance one unit at a time
       // Entity velocities are usually small, so nSteps will also be
@@ -62,7 +49,7 @@ export class PhysicsSystem extends System {
       for (let step = 0; step < nSteps && (stepSize.x != 0 || stepSize.y != 0); step++) {
         let hasCollidedThisStep = false;
         for (let j = 0; j < componentGroups.length; j++) {
-          if (i == j) continue;
+          if (i == j) continue; // Objects do not collide with themselves
 
           const [_, otherR, otherT] = componentGroups[j];
           const e2RigidBodyComponent = otherR as PhysicsBodyComponent;
@@ -83,12 +70,24 @@ export class PhysicsSystem extends System {
             continue;
           }
 
-          // Horizontal collision
+          // Find if the collision was either vertical or horizontal,
+          // so we can try the other axis next.
+          // Then, move object as far as possible towards the collided object
           step--;
           if (rPrev.isLeftOf(r2) || rPrev.isRightOf(r2)) {
+            if (rPrev.isLeftOf(r2)) {
+              furthestDestination.x = r2.left - scale.x;
+            } else {
+              furthestDestination.x = r2.right;
+            }
             stepSize.x = 0;
             physicsBody.velocity.x = 0;
           } else {
+            if (rPrev.isTopOf(r2)) {
+              furthestDestination.y = r2.top - scale.y;
+            } else {
+              furthestDestination.y = r2.bottom;
+            }
             stepSize.y = 0;
             physicsBody.velocity.y = 0;
           }
@@ -98,11 +97,11 @@ export class PhysicsSystem extends System {
         if (!hasCollidedThisStep) {
           currentPosStep.x += stepSize.x;
           currentPosStep.y += stepSize.y;
+          furthestDestination = currentPosStep;
         }
-        destination = currentPosStep;
       }
       
-      tc.position = destination;
+      tc.position = furthestDestination;
     }
   }
 

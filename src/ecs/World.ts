@@ -5,7 +5,7 @@ import { ActivationStatusComponent, TagComponent, TransformComponent } from "../
 import { Vec2 } from "@gustavo4passos/wgpu-matrix";
 
 export class Entity {
-  private entity: OpaqueEntity;
+  entity: OpaqueEntity;
   private world: World;
 
   constructor(entity: OpaqueEntity, world: World) {

@@ -9,6 +9,7 @@ import {
   ScriptComponent,
   LevelComponent,
   PhysicsBodyComponent,
+  TransformComponent,
 } from "./components";
 import { Camera } from "./Camera.ts";
 import { RenderSystem } from "./systems/render.ts";
@@ -90,7 +91,7 @@ window.addEventListener("load", async () => {
   b1.addComponent(new SpriteComponent({ r: 1, g: 0, b: 0, a: 1}));
   b1.addComponent(new PhysicsBodyComponent(new PhysicsBody() ));
 
-  const b2 = w.createEntity("Block2", true, vec2.create(350, -100), vec2.create(20, 20));
+  const b2 = w.createEntity("Block2", true, vec2.create(350, -120), vec2.create(20, 20));
   b2.addComponent(new SpriteComponent({ r: 1, g: 0, b: 0, a: 1}));
   b2.addComponent(new PhysicsBodyComponent(new PhysicsBody() ));
 
@@ -128,6 +129,8 @@ window.addEventListener("load", async () => {
     device.queue.submit([commandEncoder.finish()]);
 
     w.update(deltaTime / 1000);
+
+    const t = b1.getComponent(TransformComponent);
 
     requestAnimationFrame(gameLoop);
   }
