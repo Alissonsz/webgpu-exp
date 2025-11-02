@@ -12,6 +12,7 @@ export class Level {
 
   async initialize(device: GPUDevice) {
     const response = await fetch(this.levelFilePath);
+
     if (!response.ok) {
       throw new Error(`Failed to load level data from ${this.levelFilePath}`);
     }

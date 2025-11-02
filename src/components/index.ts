@@ -7,6 +7,7 @@ import { Entity, World } from "../ecs/World.ts";
 import { InputState, Keys } from "../InputState.ts";
 import { LDtkData, LevelData } from "../types.ts";
 import { Texture } from "../Texture.ts";
+import { PhysicsBody } from "../physics/PhysicsBodies.ts";
 
 export class TagComponent implements Component {
   tag: string;
@@ -106,5 +107,14 @@ export class LevelComponent implements Component {
         this.textures[result.path] = result.texture;
       }
     });
+  }
+}
+
+export class PhysicsBodyComponent {
+  physicsBody: PhysicsBody;
+
+  constructor(physicsBody?: PhysicsBody) {
+    if (!physicsBody) this.physicsBody = new PhysicsBody();
+    else this.physicsBody=  physicsBody;
   }
 }

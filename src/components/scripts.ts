@@ -1,4 +1,4 @@
-import { CameraComponent, TransformComponent } from ".";
+import { CameraComponent, PhysicsBodyComponent, TransformComponent } from ".";
 import { Entity, World } from "../ecs/World";
 import { GameEvent } from "../EventQueue";
 import { InputState, Keys } from "../InputState";
@@ -29,13 +29,20 @@ export class PlayerController extends Script {
 
   onUpdate(deltaTime: number): void {
     const pos = this.entity.getComponent(TransformComponent);
+    const pb  = this.entity.getComponent(PhysicsBodyComponent);
 
     if (InputState.isKeyPressed(Keys.ArrowRight)) {
-      pos.position.x += 1 * deltaTime;
+      pb.physicsBody.velocity.x = 200.0;
     }
-    if (InputState.isKeyPressed(Keys.ArrowLeft)) {
-      pos.position.x -= 1 * deltaTime;
+    else if (InputState.isKeyPressed(Keys.ArrowLeft)) {
+      pb.physicsBody.velocity.x = -200.0;
+    } else {
+      pb.physicsBody.velocity.x = 0;
     }
+
+    if (InputState.isKeyPressed(Keys.Space)) {
+      if (pb.physicsBody.velocity.y >= 0) pb.physicsBody.velocity.y = -300;
+    } 
   }
 }
 
@@ -51,6 +58,6 @@ export class CameraController extends Script {
     const cameraPos = cameraComp.camera.pos;
 
     cameraComp.camera.pos.x = cameraPos.x + (playerPos.x - 200 - cameraPos.x) * 0.2;
-    cameraComp.camera.pos.y = cameraPos.y + (playerPos.y - 50 - cameraPos.y) * 0.2;
+    cameraComp.camera.pos.y = cameraPos.y + (playerPos.y - 100 - cameraPos.y) * 0.2;
   }
 }

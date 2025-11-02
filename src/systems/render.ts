@@ -57,7 +57,6 @@ export class RenderSystem extends System {
     }
 
     const r: Rect = { x: 0, y: 0, w: 0, h: 0 };
-    const components = this.world.queryComponents(SpriteComponent, TransformComponent);
 
     for (const [e, s, t] of this.world.queryComponents(SpriteComponent, TransformComponent)) {
       r.x = (t as TransformComponent).position.x;
