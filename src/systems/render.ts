@@ -1,13 +1,14 @@
 import { System, World } from "../ecs";
 import { BatchRenderer } from "../BatchRenderer.ts";
-import { CameraComponent, LevelComponent, SpriteComponent, TransformComponent } from "../components/index.ts";
+import { CameraComponent, LevelComponent, PhysicsBodyComponent, SpriteComponent, TransformComponent } from "../components/index.ts";
 import { Rect } from "../Rect.ts";
 import { Camera } from "../Camera.ts";
-import { Level } from "../Level.ts";
 import { LevelData } from "../types.ts";
+import { AssetManager } from "../AssetManager.ts";
+import { PhysicsBody } from "../physics/PhysicsBodies.ts";
 
 export class RenderSystem extends System {
-  constructor(level: Level) {
+  constructor() {
     super();
   }
 
@@ -56,17 +57,40 @@ export class RenderSystem extends System {
       console.warn("No LevelComponent found in the world.");
     }
 
-    const r: Rect = { x: 0, y: 0, w: 0, h: 0 };
+    const r: Rect = new Rect(0, 0, 0, 0);
 
-    for (const [e, s, t] of this.world.queryComponents(SpriteComponent, TransformComponent)) {
+    for (const [_, s, t] of this.world.queryComponents(SpriteComponent, TransformComponent)) {
+      const spriteComp = s as SpriteComponent;
       r.x = (t as TransformComponent).position.x;
       r.y = (t as TransformComponent).position.y;
       r.w = (t as TransformComponent).scale.x;
       r.h = (t as TransformComponent).scale.y;
 
-      BatchRenderer.drawRect(r, (s as SpriteComponent).color);
+      
+      if (spriteComp.sprite != undefined) {
+        const src = new Rect(spriteComp.texCoord.x, spriteComp.texCoord.y, spriteComp.width, spriteComp.height);
+        BatchRenderer.drawSprite(AssetManager.getTexture(spriteComp.sprite), src, r);
+      }
+      else BatchRenderer.drawRect(r, spriteComp.color);
     }
 
+    // Drawing collision rects
+    const drawCollisionRects = false;
+    if (drawCollisionRects) {
+      let collisionRect = new Rect(0, 0, 0, 0);
+      for (const [_, t, p] of this.world.queryComponents(TransformComponent, PhysicsBodyComponent)) {
+        const pbc = p as PhysicsBodyComponent;
+        const tc = t as TransformComponent;
+        
+        collisionRect.x = tc.position.x + pbc.physicsBody.collider.offset.x;
+        collisionRect.y = tc.position.y + pbc.physicsBody.collider.offset.y;
+        collisionRect.w = pbc.physicsBody.collider.size.x;
+        collisionRect.h = pbc.physicsBody.collider.size.y;
+
+        BatchRenderer.drawRect(collisionRect, { r: 1, g: 0, b: 0, a: 0.3 });
+
+      }
+    }
     BatchRenderer.end();
   }
 }

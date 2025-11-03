@@ -1,6 +1,7 @@
 import { System } from "../ecs";
+import { Collider } from "../physics/PhysicsBodies";
 import { PhysicsBodyComponent, TransformComponent } from "../components";
-import { vec2 } from "@gustavo4passos/wgpu-matrix";
+import { vec2, Vec2 } from "@gustavo4passos/wgpu-matrix";
 import { Rect } from "../Rect.ts";
 
 export class PhysicsSystem extends System {
@@ -18,14 +19,21 @@ export class PhysicsSystem extends System {
     let r2 = new Rect(0, 0, 0, 0);
     for(let i = 0; i < componentGroups.length; i++) { 
 
-      const [e, r, t] = componentGroups[i];
+      const [_, r, t] = componentGroups[i];
       const physicsBody = (r as PhysicsBodyComponent).physicsBody;
       
       if (physicsBody.isSolid) continue; // So far solids can't move
       
       const tc = t as TransformComponent;
-      const position = tc.position;
-      const scale = tc.scale;
+
+      PhysicsSystem.getRectFromCollider(tc.position, physicsBody.collider, r1);
+
+      let position = vec2.create(0, 0);
+      let scale    = vec2.create(0, 0);
+      position.x = r1.x;
+      position.y = r1.y;
+      scale.x = r1.w;
+      scale.y = r1.h;
 
       vec2.add(physicsBody.acceleration, this.GRAVITY_ACCELERATION, physicsBody.acceleration);
       const accDt = vec2.mulScalar(physicsBody.acceleration, deltaTime);
@@ -52,17 +60,17 @@ export class PhysicsSystem extends System {
           if (i == j) continue; // Objects do not collide with themselves
 
           const [_, otherR, otherT] = componentGroups[j];
-          const e2RigidBodyComponent = otherR as PhysicsBodyComponent;
+          const e2PhysicsBodyComponent = otherR as PhysicsBodyComponent;
 
-          if (e2RigidBodyComponent.physicsBody.collider.isTrigger) continue;
+          if (e2PhysicsBodyComponent.physicsBody.collider.isTrigger) continue;
 
           const e2TransformComponent = otherT as TransformComponent;
           const e2Pos   = e2TransformComponent.position;
-          const e2Scale = e2TransformComponent.scale;
 
           rPrev.set(currentPosStep.x, currentPosStep.y, scale.x, scale.y);
           r1.set(currentPosStep.x + stepSize.x, currentPosStep.y + stepSize.y, scale.x, scale.y);
-          r2.set(e2Pos.x, e2Pos.y, e2Scale.x, e2Scale.y);
+          const e2Collider = e2PhysicsBodyComponent.physicsBody.collider;
+          PhysicsSystem.getRectFromCollider(e2Pos, e2Collider, r2);
 
           hasCollidedThisStep = PhysicsSystem.doRectsCollide(r1, r2);
 
@@ -101,8 +109,16 @@ export class PhysicsSystem extends System {
         }
       }
       
-      tc.position = furthestDestination;
+      tc.position.x = furthestDestination.x - physicsBody.collider.offset.x;
+      tc.position.y = furthestDestination.y - physicsBody.collider.offset.y;
     }
+  }
+
+  static getRectFromCollider(pos: Vec2, collider: Collider, outputRect: Rect) {
+    outputRect.x = pos.x + collider.offset.x;
+    outputRect.y = pos.y + collider.offset.y;
+    outputRect.w = collider.size.x;
+    outputRect.h = collider.size.y;
   }
 
   static doRectsCollide(r1: Rect, r2: Rect): boolean {

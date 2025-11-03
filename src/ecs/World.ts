@@ -1,7 +1,7 @@
 import { OpaqueEntity, EntityManager } from "./EntityManager.ts";
 import { Component, ComponentClass, ComponentManager } from "./Component";
 import { System } from "./System";
-import { ActivationStatusComponent, TagComponent, TransformComponent } from "../components";
+import { ActivationStatusComponent, PhysicsBodyComponent, TagComponent, TransformComponent } from "../components";
 import { Vec2 } from "@gustavo4passos/wgpu-matrix";
 
 export class Entity {
@@ -55,6 +55,14 @@ export class World {
   }
 
   addComponent<T extends Component>(entity: OpaqueEntity, component: T): T {
+    if (component instanceof PhysicsBodyComponent) {
+      const collider = component.physicsBody.collider;
+      if (collider.size.x == 0 && collider.size.y == 0) {
+        const tc = this.componentManager.getComponent(entity, TransformComponent);
+        component.physicsBody.collider.size.x = tc.scale.x;
+        component.physicsBody.collider.size.y = tc.scale.y;
+      }
+    }
     return this.componentManager.addComponent(entity, component);
   }
 

@@ -2,9 +2,13 @@ import { Vec2, vec2 } from "@gustavo4passos/wgpu-matrix";
 
 export class Collider {
   isTrigger: boolean;
+  size: Vec2;
+  offset: Vec2;
 
-  constructor(isTrigger?: boolean) {
+  constructor(isTrigger?: boolean, size?: Vec2, offset?: Vec2) {
     this.isTrigger = isTrigger? isTrigger : false;
+    this.size = size ? size : vec2.create(0, 0);
+    this.offset = offset ? offset : vec2.create(0, 0);
   }
 }
 

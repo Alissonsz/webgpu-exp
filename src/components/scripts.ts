@@ -31,6 +31,10 @@ export class PlayerController extends Script {
     const pos = this.entity.getComponent(TransformComponent);
     const pb  = this.entity.getComponent(PhysicsBodyComponent);
 
+    if (pos.position.y > 300) {
+      pos.position.y = -100;
+      pb.physicsBody.velocity.y = 0;
+    }
     if (InputState.isKeyPressed(Keys.ArrowRight)) {
       pb.physicsBody.velocity.x = 200.0;
     }
@@ -41,7 +45,7 @@ export class PlayerController extends Script {
     }
 
     if (InputState.isKeyPressed(Keys.Space)) {
-      if (pb.physicsBody.velocity.y >= 0) pb.physicsBody.velocity.y = -300;
+      if (pb.physicsBody.velocity.y >= 0) pb.physicsBody.velocity.y = -340;
     } 
   }
 }
