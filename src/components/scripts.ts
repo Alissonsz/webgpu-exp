@@ -1,4 +1,4 @@
-import { CameraComponent, PhysicsBodyComponent, TransformComponent } from ".";
+import { CameraComponent, PhysicsBodyComponent, TransformComponent, SpriteComponent } from ".";
 import { Entity, World } from "../ecs/World";
 import { GameEvent } from "../EventQueue";
 import { InputState, Keys } from "../InputState";
@@ -22,23 +22,33 @@ export abstract class Script {
   }
 }
 
+enum WalkingDirection {
+  LEFT,
+  RIGHT
+};
+
 export class PlayerController extends Script {
+  walkingDirection = WalkingDirection.RIGHT;
+
   onCreate(): void {
     console.log("PlayerController created for entity:", this.entity);
   }
 
   onUpdate(deltaTime: number): void {
-    const pos = this.entity.getComponent(TransformComponent);
-    const pb  = this.entity.getComponent(PhysicsBodyComponent);
+    const tc = this.entity.getComponent(TransformComponent);
+    const pb = this.entity.getComponent(PhysicsBodyComponent);
+    const sc = this.entity.getComponent(SpriteComponent);
 
-    if (pos.position.y > 300) {
-      pos.position.y = -100;
+    if (tc.position.y > 300) {
+      tc.position.y = -100;
       pb.physicsBody.velocity.y = 0;
     }
     if (InputState.isKeyPressed(Keys.ArrowRight)) {
+      this.walkingDirection = WalkingDirection.RIGHT;
       pb.physicsBody.velocity.x = 200.0;
     }
     else if (InputState.isKeyPressed(Keys.ArrowLeft)) {
+      this.walkingDirection = WalkingDirection.LEFT;
       pb.physicsBody.velocity.x = -200.0;
     } else {
       pb.physicsBody.velocity.x = 0;
@@ -47,6 +57,10 @@ export class PlayerController extends Script {
     if (InputState.isKeyPressed(Keys.Space)) {
       if (pb.physicsBody.velocity.y >= 0) pb.physicsBody.velocity.y = -340;
     } 
+
+    if (this.walkingDirection == WalkingDirection.LEFT) {
+      sc.flipped = true;
+    } else sc.flipped = false;
   }
 }
 

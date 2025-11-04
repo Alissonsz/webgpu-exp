@@ -69,7 +69,7 @@ export class RenderSystem extends System {
       
       if (spriteComp.sprite != undefined) {
         const src = new Rect(spriteComp.texCoord.x, spriteComp.texCoord.y, spriteComp.width, spriteComp.height);
-        BatchRenderer.drawSprite(AssetManager.getTexture(spriteComp.sprite), src, r);
+        BatchRenderer.drawSprite(AssetManager.getTexture(spriteComp.sprite), src, r, spriteComp.color, spriteComp.flipped);
       }
       else BatchRenderer.drawRect(r, spriteComp.color);
     }

@@ -50,13 +50,15 @@ export class SpriteComponent implements Component {
   width: number;
   height: number;
   color: Color;
+  flipped: boolean;
 
-  constructor(sprite?: string, texCoords?: Vec2, width?: number, height?: number, color?: Color) {
+  constructor(sprite?: string, texCoords?: Vec2, width?: number, height?: number, color?: Color, flipped?: boolean) {
     this.sprite = sprite;
-    this.color = color;
+    this.color = color ? color : { r: 1, g: 1, b: 1, a: 1 };
     this.texCoord = texCoords;
     this.width = width;
     this.height = height;
+    this.flipped = flipped ? flipped : false;
   }
 }
 

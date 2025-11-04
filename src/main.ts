@@ -56,17 +56,17 @@ window.addEventListener("load", async () => {
   w.addSystem(new ScriptSystem());
   w.addSystem(new PhysicsSystem());
 
-  const e = w.createEntity("Player", true, vec2.create(90, 10), vec2.create(128, 128));
+  const e = w.createEntity("Player", true, vec2.create(90, 10), vec2.create(100, 100));
   await AssetManager.loadTexture("playerRun", "Run.png", device);
   e.addComponent<SpriteComponent>(new SpriteComponent("playerRun", vec2.create(0, 0), 128, 128));
   e.addComponent<ScriptComponent>(new ScriptComponent(new PlayerController(w, e)));
   e.addComponent<AnimationComponent>(new AnimationComponent(8, 0.1, vec2.create(0, 0)));
-  const r = e.addComponent<PhysicsBodyComponent>(new PhysicsBodyComponent(
+  e.addComponent<PhysicsBodyComponent>(new PhysicsBodyComponent(
     new PhysicsBody(
       vec2.create(0, 0),
       vec2.create(0, 0),
       false,
-      new Collider(false, vec2.create(25, 63), vec2.create(55, 65))
+      new Collider(false, vec2.create(20, 55), vec2.create(45, 45))
     )
   ));
 
