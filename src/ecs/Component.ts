@@ -13,6 +13,7 @@ export class ComponentManager {
       this.components.set(componentName, new Map());
     }
     this.components.get(componentName)!.set(entity, component);
+    return component;
   }
 
   removeComponent<T extends Component>(entity: OpaqueEntity, componentClass: ComponentClass<T>): void {

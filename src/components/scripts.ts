@@ -1,4 +1,4 @@
-import { CameraComponent, TransformComponent } from ".";
+import { CameraComponent, PhysicsBodyComponent, TransformComponent, SpriteComponent } from ".";
 import { Entity, World } from "../ecs/World";
 import { GameEvent } from "../EventQueue";
 import { InputState, Keys } from "../InputState";
@@ -22,20 +22,45 @@ export abstract class Script {
   }
 }
 
+enum WalkingDirection {
+  LEFT,
+  RIGHT
+};
+
 export class PlayerController extends Script {
+  walkingDirection = WalkingDirection.RIGHT;
+
   onCreate(): void {
     console.log("PlayerController created for entity:", this.entity);
   }
 
   onUpdate(deltaTime: number): void {
-    const pos = this.entity.getComponent(TransformComponent);
+    const tc = this.entity.getComponent(TransformComponent);
+    const pb = this.entity.getComponent(PhysicsBodyComponent);
+    const sc = this.entity.getComponent(SpriteComponent);
 
+    if (tc.position.y > 300) {
+      tc.position.y = -100;
+      pb.physicsBody.velocity.y = 0;
+    }
     if (InputState.isKeyPressed(Keys.ArrowRight)) {
-      pos.position.x += 0.25 * deltaTime;
+      this.walkingDirection = WalkingDirection.RIGHT;
+      pb.physicsBody.velocity.x = 200.0;
     }
-    if (InputState.isKeyPressed(Keys.ArrowLeft)) {
-      pos.position.x -= 0.25 * deltaTime;
+    else if (InputState.isKeyPressed(Keys.ArrowLeft)) {
+      this.walkingDirection = WalkingDirection.LEFT;
+      pb.physicsBody.velocity.x = -200.0;
+    } else {
+      pb.physicsBody.velocity.x = 0;
     }
+
+    if (InputState.isKeyPressed(Keys.Space)) {
+      if (pb.physicsBody.velocity.y >= 0) pb.physicsBody.velocity.y = -340;
+    } 
+
+    if (this.walkingDirection == WalkingDirection.LEFT) {
+      sc.flipped = true;
+    } else sc.flipped = false;
   }
 }
 
@@ -51,6 +76,6 @@ export class CameraController extends Script {
     const cameraPos = cameraComp.camera.pos;
 
     cameraComp.camera.pos.x = cameraPos.x + (playerPos.x - 200 - cameraPos.x) * 0.2;
-    cameraComp.camera.pos.y = cameraPos.y + (playerPos.y - 50 - cameraPos.y) * 0.2;
+    cameraComp.camera.pos.y = cameraPos.y + (playerPos.y - 100 - cameraPos.y) * 0.2;
   }
 }

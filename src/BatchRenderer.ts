@@ -69,8 +69,8 @@ export class BatchRenderer {
   private static whiteTexture: Texture;
   // Helpers
   private static originUnitRect: Rect;
+  private static normSrcRect: Rect;
   private static whiteColor: Color;
-  private static camera: Camera;
 
   static stats: BatchRendererStats;
 
@@ -101,6 +101,7 @@ export class BatchRenderer {
     BatchRenderer.initPipeline();
     BatchRenderer.initWhiteTexture();
     BatchRenderer.originUnitRect = new Rect(0, 0, 1, 1);
+    BatchRenderer.normSrcRect = new Rect(0, 0, 1, 1);
     BatchRenderer.whiteColor = { r: 1, g: 1, b: 1, a: 1 };
 
     BatchRenderer.hasInitialized = true;
@@ -253,7 +254,7 @@ export class BatchRenderer {
     BatchRenderer.flush();
   }
 
-  static drawSprite(texture: Texture, src: Rect, dst: Rect, color?: Color) {
+  static drawSprite(texture: Texture, src: Rect, dst: Rect, color?: Color, flipped?: boolean) {
     BatchRenderer.flushIfQuadLimitReached();
     const textureIndex = BatchRenderer.getTextureSlot(texture);
 
@@ -261,13 +262,23 @@ export class BatchRenderer {
     const textureHeight = texture.height;
 
     const currentVertexIndex = BatchRenderer.pendingQuads * VERTICES_PER_QUAD;
+    BatchRenderer.normSrcRect.x = src.x / textureWidth;
+    BatchRenderer.normSrcRect.y = src.y / textureHeight;
+    BatchRenderer.normSrcRect.w = src.w / textureWidth;
+    BatchRenderer.normSrcRect.h = src.h / textureHeight;
+
+    if (flipped) {
+      BatchRenderer.normSrcRect.x += BatchRenderer.normSrcRect.w;
+      BatchRenderer.normSrcRect.w *= -1;
+    }
+
     // Top left vertex
     BatchRenderer.setVertexData(
       currentVertexIndex,
       dst.x,
       dst.y,
-      src.x / textureWidth,
-      src.y / textureHeight,
+      BatchRenderer.normSrcRect.x,
+      BatchRenderer.normSrcRect.y,
       textureIndex,
       color ? color : BatchRenderer.whiteColor,
     );
@@ -276,8 +287,8 @@ export class BatchRenderer {
       currentVertexIndex + 1,
       dst.x + dst.w,
       dst.y,
-      (src.x + src.w) / textureWidth,
-      src.y / textureHeight,
+      BatchRenderer.normSrcRect.x + BatchRenderer.normSrcRect.w,
+      BatchRenderer.normSrcRect.y,
       textureIndex,
       color ? color : BatchRenderer.whiteColor,
     );
@@ -286,8 +297,8 @@ export class BatchRenderer {
       currentVertexIndex + 2,
       dst.x,
       dst.y + dst.h,
-      src.x / textureWidth,
-      (src.y + src.h) / textureHeight,
+      BatchRenderer.normSrcRect.x,
+      BatchRenderer.normSrcRect.y + BatchRenderer.normSrcRect.h,
       textureIndex,
       color ? color : BatchRenderer.whiteColor,
     );
@@ -296,8 +307,8 @@ export class BatchRenderer {
       currentVertexIndex + 3,
       dst.x + dst.w,
       dst.y + dst.h,
-      (src.x + src.w) / textureWidth,
-      (src.y + src.h) / textureHeight,
+      BatchRenderer.normSrcRect.x + BatchRenderer.normSrcRect.w,
+      BatchRenderer.normSrcRect.y + BatchRenderer.normSrcRect.h,
       textureIndex,
       color ? color : BatchRenderer.whiteColor,
     );

@@ -1,11 +1,11 @@
 import { OpaqueEntity, EntityManager } from "./EntityManager.ts";
 import { Component, ComponentClass, ComponentManager } from "./Component";
 import { System } from "./System";
-import { ActivationStatusComponent, TagComponent, TransformComponent } from "../components";
+import { ActivationStatusComponent, PhysicsBodyComponent, TagComponent, TransformComponent } from "../components";
 import { Vec2 } from "@gustavo4passos/wgpu-matrix";
 
 export class Entity {
-  private entity: OpaqueEntity;
+  entity: OpaqueEntity;
   private world: World;
 
   constructor(entity: OpaqueEntity, world: World) {
@@ -13,8 +13,8 @@ export class Entity {
     this.world = world;
   }
 
-  addComponent<T extends Component>(component: T): void {
-    this.world.addComponent(this.entity, component);
+  addComponent<T extends Component>(component: T): T {
+    return this.world.addComponent(this.entity, component);
   }
 
   removeComponent<T extends Component>(componentClass: ComponentClass<T>): void {
@@ -54,8 +54,16 @@ export class World {
     this.entityManager.destroyEntity(entity);
   }
 
-  addComponent<T extends Component>(entity: OpaqueEntity, component: T): void {
-    this.componentManager.addComponent(entity, component);
+  addComponent<T extends Component>(entity: OpaqueEntity, component: T): T {
+    if (component instanceof PhysicsBodyComponent) {
+      const collider = component.physicsBody.collider;
+      if (collider.size.x == 0 && collider.size.y == 0) {
+        const tc = this.componentManager.getComponent(entity, TransformComponent);
+        component.physicsBody.collider.size.x = tc.scale.x;
+        component.physicsBody.collider.size.y = tc.scale.y;
+      }
+    }
+    return this.componentManager.addComponent(entity, component);
   }
 
   removeComponent<T extends Component>(entity: OpaqueEntity, componentClass: ComponentClass<T>): void {
@@ -68,6 +76,44 @@ export class World {
 
   hasComponent<T extends Component>(entity: OpaqueEntity, componentClass: ComponentClass<T>): boolean {
     return this.componentManager.hasComponent(entity, componentClass);
+  }
+
+  getComponentGroups<T extends Component[], C extends { [K in keyof T]: ComponentClass<T[K]> }>(
+    ...componentClasses: C
+  ): [Entity, ...T][] {
+    if (componentClasses.length === 0) return;
+
+    const firstClass = componentClasses[0];
+    const firstMap = this.componentManager.components.get(firstClass.name);
+    if (!firstMap) return []; // No instance of this kind of component exist
+
+    let componentGroups: [Entity, ...T][] = [];
+
+    for (const [entity, firstComponent] of firstMap.entries()) {
+      let includesAll = true;
+      const components: Component[] = [firstComponent];
+
+      for (let i = 1; i < componentClasses.length; i++) {
+        const cls = componentClasses[i];
+        const componentMap = this.componentManager.components.get(cls.name);
+
+        if (!componentMap) return;
+
+        const component = componentMap.get(entity);
+        if (!component) {
+          includesAll = false;
+          break;
+        }
+        components.push(component);
+      }
+
+      if (includesAll) {
+        const e = new Entity(entity, this);
+        componentGroups.push([e, ...(components as T)]);
+      }
+    }
+
+    return componentGroups;
   }
 
   *queryComponents<T extends Component[], C extends { [K in keyof T]: ComponentClass<T[K]> }>(
