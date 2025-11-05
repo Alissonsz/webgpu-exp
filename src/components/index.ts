@@ -95,6 +95,19 @@ export class AnimationComponent implements Component {
   }
 }
 
+export class AnimationStateComponent implements Component {
+  stateToAnimationAndSpriteMap: Record<string, { animation: AnimationComponent; sprite: SpriteComponent }>;
+  state: string;
+
+  constructor(
+    stateToAnimationMap: Record<string, { animation: AnimationComponent; sprite: SpriteComponent }>,
+    initialState: string = "",
+  ) {
+    this.stateToAnimationAndSpriteMap = stateToAnimationMap;
+    this.state = initialState;
+  }
+}
+
 export class LevelComponent implements Component {
   levelPath: string;
   levelData: LevelData;
@@ -147,6 +160,6 @@ export class PhysicsBodyComponent {
 
   constructor(physicsBody?: PhysicsBody) {
     if (!physicsBody) this.physicsBody = new PhysicsBody();
-    else this.physicsBody=  physicsBody;
+    else this.physicsBody = physicsBody;
   }
 }

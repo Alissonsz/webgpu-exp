@@ -1,4 +1,4 @@
-import { CameraComponent, PhysicsBodyComponent, TransformComponent, SpriteComponent } from ".";
+import { CameraComponent, PhysicsBodyComponent, TransformComponent, SpriteComponent, AnimationStateComponent } from ".";
 import { Entity, World } from "../ecs/World";
 import { GameEvent } from "../EventQueue";
 import { InputState, Keys } from "../InputState";
@@ -24,11 +24,17 @@ export abstract class Script {
 
 enum WalkingDirection {
   LEFT,
-  RIGHT
-};
+  RIGHT,
+}
+
+enum State {
+  IDLE,
+  RUNNING,
+}
 
 export class PlayerController extends Script {
   walkingDirection = WalkingDirection.RIGHT;
+  currentState = State.IDLE;
 
   onCreate(): void {
     console.log("PlayerController created for entity:", this.entity);
@@ -38,6 +44,7 @@ export class PlayerController extends Script {
     const tc = this.entity.getComponent(TransformComponent);
     const pb = this.entity.getComponent(PhysicsBodyComponent);
     const sc = this.entity.getComponent(SpriteComponent);
+    const asc = this.entity.getComponent(AnimationStateComponent);
 
     if (tc.position.y > 300) {
       tc.position.y = -100;
@@ -46,21 +53,32 @@ export class PlayerController extends Script {
     if (InputState.isKeyPressed(Keys.ArrowRight)) {
       this.walkingDirection = WalkingDirection.RIGHT;
       pb.physicsBody.velocity.x = 200.0;
-    }
-    else if (InputState.isKeyPressed(Keys.ArrowLeft)) {
+      this.currentState = State.RUNNING;
+    } else if (InputState.isKeyPressed(Keys.ArrowLeft)) {
       this.walkingDirection = WalkingDirection.LEFT;
       pb.physicsBody.velocity.x = -200.0;
+      this.currentState = State.RUNNING;
     } else {
       pb.physicsBody.velocity.x = 0;
+      this.currentState = State.IDLE;
     }
 
     if (InputState.isKeyPressed(Keys.Space)) {
       if (pb.physicsBody.velocity.y >= 0) pb.physicsBody.velocity.y = -340;
-    } 
+    }
 
     if (this.walkingDirection == WalkingDirection.LEFT) {
       sc.flipped = true;
     } else sc.flipped = false;
+
+    switch (this.currentState) {
+      case State.IDLE:
+        asc.state = "idle";
+        break;
+      case State.RUNNING:
+        asc.state = "run";
+        break;
+    }
   }
 }
 

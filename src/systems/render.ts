@@ -1,6 +1,12 @@
 import { System, World } from "../ecs";
 import { BatchRenderer } from "../BatchRenderer.ts";
-import { CameraComponent, LevelComponent, PhysicsBodyComponent, SpriteComponent, TransformComponent } from "../components/index.ts";
+import {
+  CameraComponent,
+  LevelComponent,
+  PhysicsBodyComponent,
+  SpriteComponent,
+  TransformComponent,
+} from "../components/index.ts";
 import { Rect } from "../Rect.ts";
 import { Camera } from "../Camera.ts";
 import { LevelData } from "../types.ts";
@@ -66,12 +72,16 @@ export class RenderSystem extends System {
       r.w = (t as TransformComponent).scale.x;
       r.h = (t as TransformComponent).scale.y;
 
-      
       if (spriteComp.sprite != undefined) {
         const src = new Rect(spriteComp.texCoord.x, spriteComp.texCoord.y, spriteComp.width, spriteComp.height);
-        BatchRenderer.drawSprite(AssetManager.getTexture(spriteComp.sprite), src, r, spriteComp.color, spriteComp.flipped);
-      }
-      else BatchRenderer.drawRect(r, spriteComp.color);
+        BatchRenderer.drawSprite(
+          AssetManager.getTexture(spriteComp.sprite),
+          src,
+          r,
+          spriteComp.color,
+          spriteComp.flipped,
+        );
+      } else BatchRenderer.drawRect(r, spriteComp.color);
     }
 
     // Drawing collision rects
@@ -81,14 +91,13 @@ export class RenderSystem extends System {
       for (const [_, t, p] of this.world.queryComponents(TransformComponent, PhysicsBodyComponent)) {
         const pbc = p as PhysicsBodyComponent;
         const tc = t as TransformComponent;
-        
+
         collisionRect.x = tc.position.x + pbc.physicsBody.collider.offset.x;
         collisionRect.y = tc.position.y + pbc.physicsBody.collider.offset.y;
         collisionRect.w = pbc.physicsBody.collider.size.x;
         collisionRect.h = pbc.physicsBody.collider.size.y;
 
         BatchRenderer.drawRect(collisionRect, { r: 1, g: 0, b: 0, a: 0.3 });
-
       }
     }
     BatchRenderer.end();
