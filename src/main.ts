@@ -14,8 +14,9 @@ import {
 } from "./components";
 import { Camera } from "./Camera.ts";
 import { RenderSystem } from "./systems/render.ts";
-import { BatchRenderer } from "./BatchRenderer.ts";
 import { ScriptSystem } from "./systems/script.ts";
+import { PhysicsSystem } from "./systems/physics.ts";
+import { BatchRenderer } from "./BatchRenderer.ts";
 import { CameraController, PlayerController } from "./components/scripts";
 import { Collider, PhysicsBody } from "./physics/PhysicsBodies";
 import { AssetManager } from "./AssetManager.ts";
@@ -50,10 +51,10 @@ window.addEventListener("load", async () => {
   l.addComponent<LevelComponent>(new LevelComponent("../assets/level.ldtk", device));
   await l.getComponent(LevelComponent).initialize(device);
 
-  const renderSystem = new RenderSystem();
   w.addSystem(new AnimationSystem());
-  w.addSystem(renderSystem);
+  w.addSystem(new RenderSystem());
   w.addSystem(new ScriptSystem());
+  w.addSystem(new PhysicsSystem());
 
   const e = w.createEntity("Player", true, vec2.create(90, 10), vec2.create(100, 100));
   await AssetManager.loadTexture("playerRun", "Run.png", device);
