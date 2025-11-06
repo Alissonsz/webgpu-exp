@@ -1,4 +1,4 @@
-import { System } from "../ecs";
+import { System, Entity } from "../ecs";
 import { Collider } from "../physics/PhysicsBodies";
 import { PhysicsBodyComponent, TransformComponent } from "../components";
 import { vec2, Vec2 } from "@gustavo4passos/wgpu-matrix";
@@ -114,11 +114,49 @@ export class PhysicsSystem extends System {
     }
   }
 
-  static getRectFromCollider(pos: Vec2, collider: Collider, outputRect: Rect) {
+  isOnGround(e: Entity): boolean {
+    const tc = e.getComponent(TransformComponent);
+    const pbc = e.getComponent(PhysicsBodyComponent); 
+    
+    if (!pbc) {
+      console.log("Warning: isOnGround check, but entity has no physics body component");
+      return false;
+    }
+
+    const pos = tc.position;
+    const physicsBody = pbc.physicsBody;
+
+    const eColliderRect = PhysicsSystem.getRectFromCollider(pos, physicsBody.collider);
+    eColliderRect.y += 1;
+    const e2ColliderRect = new Rect(0, 0, 0, 0);
+
+    for (const [e2, e2Tc, e2Pbc] of this.world.queryComponents(TransformComponent, PhysicsBodyComponent)) {
+      if (e.isSameEntityAs(e2)) continue;
+
+      const e2Pos = (e2Tc as TransformComponent).position;
+      const e2Collider = (e2Pbc as PhysicsBodyComponent).physicsBody.collider;
+
+      PhysicsSystem.getRectFromCollider(e2Pos, e2Collider, e2ColliderRect);
+
+      if (PhysicsSystem.doRectsCollide(eColliderRect, e2ColliderRect)) return true;
+    }
+
+    return false;
+  }
+
+  // This method can take the output rect to avoid instantiating and destroy them everytime,
+  // since they're mostly discardable.
+  // It will create a new rect is no outputRect is passed as an argument.
+  // It will return a rect regardless.
+  static getRectFromCollider(pos: Vec2, collider: Collider, outputRect?: Rect): Rect {
+    if (!outputRect) outputRect = new Rect(0, 0, 0, 0);
+
     outputRect.x = pos.x + collider.offset.x;
     outputRect.y = pos.y + collider.offset.y;
     outputRect.w = collider.size.x;
     outputRect.h = collider.size.y;
+
+    return outputRect;
   }
 
   static doRectsCollide(r1: Rect, r2: Rect): boolean {

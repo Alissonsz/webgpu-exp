@@ -17,7 +17,6 @@ import { RenderSystem } from "./systems/render.ts";
 import { BatchRenderer } from "./BatchRenderer.ts";
 import { ScriptSystem } from "./systems/script.ts";
 import { CameraController, PlayerController } from "./components/scripts";
-import { PhysicsSystem } from "./systems/physics.ts";
 import { Collider, PhysicsBody } from "./physics/PhysicsBodies";
 import { AssetManager } from "./AssetManager.ts";
 import { AnimationSystem } from "./systems/animation.ts";
@@ -55,7 +54,6 @@ window.addEventListener("load", async () => {
   w.addSystem(new AnimationSystem());
   w.addSystem(renderSystem);
   w.addSystem(new ScriptSystem());
-  w.addSystem(new PhysicsSystem());
 
   const e = w.createEntity("Player", true, vec2.create(90, 10), vec2.create(100, 100));
   await AssetManager.loadTexture("playerRun", "Run.png", device);

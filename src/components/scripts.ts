@@ -35,6 +35,7 @@ enum State {
 export class PlayerController extends Script {
   walkingDirection = WalkingDirection.RIGHT;
   currentState = State.IDLE;
+  onGround = false;
 
   onCreate(): void {
     console.log("PlayerController created for entity:", this.entity);
@@ -45,6 +46,8 @@ export class PlayerController extends Script {
     const pb = this.entity.getComponent(PhysicsBodyComponent);
     const sc = this.entity.getComponent(SpriteComponent);
     const asc = this.entity.getComponent(AnimationStateComponent);
+
+    this.onGround = this.world.physicsSystem.isOnGround(this.entity);
 
     if (tc.position.y > 300) {
       tc.position.y = -100;
@@ -64,8 +67,8 @@ export class PlayerController extends Script {
     }
 
     if (InputState.isKeyPressed(Keys.Space)) {
-      if (pb.physicsBody.velocity.y >= 0) pb.physicsBody.velocity.y = -340;
-    }
+      if (this.onGround) pb.physicsBody.velocity.y = -340;
+    } 
 
     if (this.walkingDirection == WalkingDirection.LEFT) {
       sc.flipped = true;
