@@ -2,6 +2,7 @@ import { CameraComponent, PhysicsBodyComponent, TransformComponent, SpriteCompon
 import { Entity, World } from "../ecs/World";
 import { GameEvent } from "../EventQueue";
 import { InputState, Keys } from "../InputState";
+import { PhysicsSystem } from "../systems/physics";
 
 export abstract class Script {
   world: World;
@@ -47,20 +48,24 @@ export class PlayerController extends Script {
     const sc = this.entity.getComponent(SpriteComponent);
     const asc = this.entity.getComponent(AnimationStateComponent);
 
-    this.onGround = this.world.physicsSystem.isOnGround(this.entity);
+    const physicsSystem = this.world.getSystem(PhysicsSystem);
+    this.onGround = physicsSystem.isOnGround(this.entity);
 
+    const JUMP_VELOCITY = 200;
+    const AIR_VELOCITY_REDUCTION = 50;
     if (tc.position.y > 300) {
       tc.position.y = -100;
       pb.physicsBody.velocity.y = 0;
     }
     if (InputState.isKeyPressed(Keys.ArrowRight)) {
       this.walkingDirection = WalkingDirection.RIGHT;
-      pb.physicsBody.velocity.x = 200.0;
-      this.currentState = State.RUNNING;
-    } else if (InputState.isKeyPressed(Keys.ArrowLeft)) {
+      pb.physicsBody.velocity.x = JUMP_VELOCITY;
+      if (!this.onGround) pb.physicsBody.velocity.x -= AIR_VELOCITY_REDUCTION;
+    }
+    else if (InputState.isKeyPressed(Keys.ArrowLeft)) {
       this.walkingDirection = WalkingDirection.LEFT;
-      pb.physicsBody.velocity.x = -200.0;
-      this.currentState = State.RUNNING;
+      pb.physicsBody.velocity.x = -JUMP_VELOCITY;
+      if (!this.onGround) pb.physicsBody.velocity.x += AIR_VELOCITY_REDUCTION;
     } else {
       pb.physicsBody.velocity.x = 0;
       this.currentState = State.IDLE;
@@ -90,13 +95,17 @@ export class CameraController extends Script {
     const player = this.world.getEntityByTag("Player");
     if (!player) return;
 
-    const playerPos = player?.getComponent(TransformComponent)?.position;
+    const playerTransform = player?.getComponent(TransformComponent);
+    const playerPos = playerTransform.position;
+    const playerScale = playerTransform.scale;
     const cameraComp = this.entity.getComponent(CameraComponent);
     if (!playerPos || !cameraComp) return;
 
     const cameraPos = cameraComp.camera.pos;
+    const destinationPosX = playerPos.x - (cameraComp.camera.dimensions.x - playerScale.x) * 0.5;    
+    const destinationPosY = playerPos.y - (cameraComp.camera.dimensions.y - playerScale.y) * 0.5;    
 
-    cameraComp.camera.pos.x = cameraPos.x + (playerPos.x - 200 - cameraPos.x) * 0.2;
-    cameraComp.camera.pos.y = cameraPos.y + (playerPos.y - 100 - cameraPos.y) * 0.2;
+    cameraComp.camera.pos.x = cameraPos.x + (destinationPosX - cameraPos.x) * 0.2;
+    cameraComp.camera.pos.y = cameraPos.y + (destinationPosY - cameraPos.y) * 0.2;
   }
 }

@@ -7,7 +7,7 @@ export type ComponentClass<T extends Component> = new (...args: any[]) => T;
 export class ComponentManager {
   components: Map<string, Map<OpaqueEntity, Component>> = new Map();
 
-  addComponent<T extends Component>(entity: OpaqueEntity, component: T): void {
+  addComponent<T extends Component>(entity: OpaqueEntity, component: T): T {
     const componentName = component.constructor.name;
     if (!this.components.has(componentName)) {
       this.components.set(componentName, new Map());

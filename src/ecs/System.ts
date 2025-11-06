@@ -30,3 +30,5 @@ export abstract class System {
     );
   }
 }
+
+export type SystemConstructor<T extends System> = new (...args: any[]) => T;

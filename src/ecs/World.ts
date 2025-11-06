@@ -1,7 +1,6 @@
 import { OpaqueEntity, EntityManager } from "./EntityManager.ts";
 import { Component, ComponentClass, ComponentManager } from "./Component";
-import { System } from "./System";
-import { PhysicsSystem } from "../systems/physics";
+import { System, SystemConstructor} from "./System";
 import { ActivationStatusComponent, PhysicsBodyComponent, TagComponent, TransformComponent } from "../components";
 import { Vec2 } from "@gustavo4passos/wgpu-matrix";
 
@@ -40,14 +39,9 @@ export class World {
   private componentManager: ComponentManager;
   private systems: System[] = [];
 
-  physicsSystem: PhysicsSystem;
-
   constructor() {
     this.entityManager = new EntityManager();
     this.componentManager = new ComponentManager();
-
-    this.physicsSystem = new PhysicsSystem();
-    this.physicsSystem.setWorld(this);
   }
 
   createEntity(tag?: string, isActive?: boolean, pos?: Vec2, size?: Vec2): Entity {
@@ -74,6 +68,16 @@ export class World {
       }
     }
     return this.componentManager.addComponent(entity, component);
+  }
+
+  getSystem<T extends System>(ctor: SystemConstructor<T>): T {
+    for (const s of this.systems) {
+      if (s instanceof ctor) return s as T;
+    }
+
+    // We assume retrieving an uknown system should have never happen to avoid
+    // future bugs.
+    throw new Error(`Trying to retrieve unkown system: ${ctor.name}`);
   }
 
   removeComponent<T extends Component>(entity: OpaqueEntity, componentClass: ComponentClass<T>): void {
@@ -174,8 +178,6 @@ export class World {
 
   update(deltaTime: number): void {
     const entities = this.entityManager.getEntities();
-
-    this.physicsSystem.update(deltaTime);
 
     for (const system of this.systems) {
       system.update(deltaTime);
