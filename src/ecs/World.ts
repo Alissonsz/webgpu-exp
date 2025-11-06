@@ -1,6 +1,7 @@
 import { OpaqueEntity, EntityManager } from "./EntityManager.ts";
 import { Component, ComponentClass, ComponentManager } from "./Component";
 import { System } from "./System";
+import { PhysicsSystem } from "../systems/physics";
 import { ActivationStatusComponent, PhysicsBodyComponent, TagComponent, TransformComponent } from "../components";
 import { Vec2 } from "@gustavo4passos/wgpu-matrix";
 
@@ -28,6 +29,10 @@ export class Entity {
   hasComponent<T extends Component>(componentClass: ComponentClass<T>): boolean {
     return this.world.hasComponent(this.entity, componentClass);
   }
+
+  isSameEntityAs(e: Entity): boolean {
+    return this.entity == e.entity;
+  }
 }
 
 export class World {
@@ -35,9 +40,14 @@ export class World {
   private componentManager: ComponentManager;
   private systems: System[] = [];
 
+  physicsSystem: PhysicsSystem;
+
   constructor() {
     this.entityManager = new EntityManager();
     this.componentManager = new ComponentManager();
+
+    this.physicsSystem = new PhysicsSystem();
+    this.physicsSystem.setWorld(this);
   }
 
   createEntity(tag?: string, isActive?: boolean, pos?: Vec2, size?: Vec2): Entity {
@@ -164,6 +174,9 @@ export class World {
 
   update(deltaTime: number): void {
     const entities = this.entityManager.getEntities();
+
+    this.physicsSystem.update(deltaTime);
+
     for (const system of this.systems) {
       system.update(deltaTime);
     }
