@@ -61,11 +61,12 @@ export class PlayerController extends Script {
       this.walkingDirection = WalkingDirection.RIGHT;
       pb.physicsBody.velocity.x = JUMP_VELOCITY;
       if (!this.onGround) pb.physicsBody.velocity.x -= AIR_VELOCITY_REDUCTION;
-    }
-    else if (InputState.isKeyPressed(Keys.ArrowLeft)) {
+      else this.currentState = State.RUNNING;
+    } else if (InputState.isKeyPressed(Keys.ArrowLeft)) {
       this.walkingDirection = WalkingDirection.LEFT;
       pb.physicsBody.velocity.x = -JUMP_VELOCITY;
       if (!this.onGround) pb.physicsBody.velocity.x += AIR_VELOCITY_REDUCTION;
+      else this.currentState = State.RUNNING;
     } else {
       pb.physicsBody.velocity.x = 0;
       this.currentState = State.IDLE;
@@ -73,7 +74,7 @@ export class PlayerController extends Script {
 
     if (InputState.isKeyPressed(Keys.Space)) {
       if (this.onGround) pb.physicsBody.velocity.y = -340;
-    } 
+    }
 
     if (this.walkingDirection == WalkingDirection.LEFT) {
       sc.flipped = true;
@@ -102,8 +103,8 @@ export class CameraController extends Script {
     if (!playerPos || !cameraComp) return;
 
     const cameraPos = cameraComp.camera.pos;
-    const destinationPosX = playerPos.x - (cameraComp.camera.dimensions.x - playerScale.x) * 0.5;    
-    const destinationPosY = playerPos.y - (cameraComp.camera.dimensions.y - playerScale.y) * 0.5;    
+    const destinationPosX = playerPos.x - (cameraComp.camera.dimensions.x - playerScale.x) * 0.5;
+    const destinationPosY = playerPos.y - (cameraComp.camera.dimensions.y - playerScale.y) * 0.5;
 
     cameraComp.camera.pos.x = cameraPos.x + (destinationPosX - cameraPos.x) * 0.2;
     cameraComp.camera.pos.y = cameraPos.y + (destinationPosY - cameraPos.y) * 0.2;
