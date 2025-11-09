@@ -79,13 +79,14 @@ export class AnimationComponent implements Component {
   isPlaying: boolean;
   loop: boolean = true;
 
-  constructor(frameCount: number, frameDuration: number, baseTexCoord: Vec2) {
+  constructor(frameCount: number, frameDuration: number, baseTexCoord: Vec2, loop: boolean = true) {
     this.frameCount = frameCount;
     this.currentFrame = 0;
     this.baseTexCoord = baseTexCoord;
     this.frameDuration = frameDuration;
     this.elapsedTime = 0;
     this.isPlaying = true;
+    this.loop = loop;
   }
 
   getCurrentFrameTexSrc(spriteComponent: SpriteComponent): Vec2 {
