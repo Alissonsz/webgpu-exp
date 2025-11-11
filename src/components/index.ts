@@ -144,7 +144,6 @@ export class LevelComponent implements Component {
     this.collisionRects = new Array<Rect>;
     for (const layer of this.levelData.layerInstances) {
       if (layer.__type == "Entities" && layer.__identifier == "CollisionLayer") {
-        console.log("Encontrei o retinho aqui");
         for (const e of layer.entityInstances) {
           if (e.__identifier == "CollisionGround") {
             this.collisionRects.push(new Rect(e.px[0], e.px[1], e.width, e.height))
@@ -157,9 +156,12 @@ export class LevelComponent implements Component {
 
 export class PhysicsBodyComponent {
   physicsBody: PhysicsBody;
+  active: boolean;
 
   constructor(physicsBody?: PhysicsBody) {
     if (!physicsBody) this.physicsBody = new PhysicsBody();
     else this.physicsBody = physicsBody;
+
+    this.active = true;
   }
 }
