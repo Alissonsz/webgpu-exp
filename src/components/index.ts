@@ -135,6 +135,7 @@ export class LevelComponent implements Component {
     }
     // Load tilesets
     for (const tileset of parsedData.defs.tilesets) {
+      if (!tileset.relPath) continue;
       this.tilesetTextures[tileset.uid] = await AssetManager.loadTexture(tileset.identifier, tileset.relPath);
 
     }

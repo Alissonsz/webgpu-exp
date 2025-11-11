@@ -49,18 +49,21 @@ window.addEventListener("load", async () => {
   // ECS Example
   const w = new World();
   const l = w.createEntity("Level", true);
-  l.addComponent<LevelComponent>(new LevelComponent("../assets/level-collision.ldtk", device));
-  await l.getComponent(LevelComponent).initialize(device);
+  l.addComponent<LevelComponent>(new LevelComponent("../assets/level-collision.ldtk"));
+  await l.getComponent(LevelComponent).initialize();
 
   w.addSystem(new AnimationSystem());
   w.addSystem(new RenderSystem());
   w.addSystem(new ScriptSystem());
   w.addSystem(new PhysicsSystem());
 
-  const e = w.createEntity("Player", true, vec2.create(90, 10), vec2.create(100, 100));
-  await AssetManager.loadTexture("playerRun", "Run.png", device);
-  await AssetManager.loadTexture("playerIdle", "Idle.png", device);
-  await AssetManager.loadTexture("playerJump", "Jump.png", device);
+  const playerColliderOffsetPercentage = vec2.create(0.2, 0.55);
+  const playerColliderPercentage = 0.45;
+  const playerSize = vec2.create(100, 100);
+  const e = w.createEntity("Player", true, vec2.create(90, 10), playerSize);
+  await AssetManager.loadTexture("playerRun", "Run.png");
+  await AssetManager.loadTexture("playerIdle", "Idle.png");
+  await AssetManager.loadTexture("playerJump", "Jump.png");
   e.addComponent<SpriteComponent>(new SpriteComponent("playerRun", vec2.create(0, 0), 128, 128));
   e.addComponent<ScriptComponent>(new ScriptComponent(new PlayerController(w, e)));
   e.addComponent<AnimationStateComponent>(
@@ -89,7 +92,9 @@ window.addEventListener("load", async () => {
         vec2.create(0, 0),
         vec2.create(0, 0),
         false,
-        new Collider(false, vec2.create(20, 55), vec2.create(45, 45)),
+        new Collider(false, 
+          vec2.create(Math.floor(playerSize.x * playerColliderOffsetPercentage.x), Math.floor(playerSize.y * playerColliderOffsetPercentage.y)), 
+          vec2.create(Math.floor(playerSize.x * playerColliderPercentage), Math.floor(playerSize.y * playerColliderPercentage))), 
       ),
     ),
   );

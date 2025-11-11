@@ -45,7 +45,7 @@ export class RenderSystem extends System {
         // Render tile layer
         const layerType = layer.__type;
 
-        if (layerType == "Tiles" || layerType == "IntGrid") {
+        if (layerType == "Tiles" || layerType == "IntGrid" || layerType == "AutoLayer") {
           const gridTiles = layerType == "Tiles" ? layer.gridTiles : layer.autoLayerTiles;
           gridTiles.forEach((tile) => {
             const tilePos = { x: tile.px[0], y: tile.px[1] };
@@ -53,13 +53,13 @@ export class RenderSystem extends System {
     
             dst.x = tilePos.x;
             dst.y = tilePos.y;
-            dst.w = 16;
-            dst.h = 16;
+            dst.w = 16; // TODO: Extract this from level
+            dst.h = 16; // TODO: Extract this from level
     
             src.x = tilesetUV.x;
             src.y = tilesetUV.y;
-            src.w = 16;
-            src.h = 16;
+            src.w = 16; // TODO: Extract this from level
+            src.h = 16; // TODO: Extract this from level
     
             BatchRenderer.drawSprite(level.tilesetTextures[layer.__tilesetDefUid], src, dst);
           });
