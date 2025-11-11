@@ -2,10 +2,12 @@ import { Component } from "../ecs/Component.ts";
 import { vec2, Vec2 } from "@gustavo4passos/wgpu-matrix";
 import { Camera } from "../Camera.ts";
 import { Color } from "../BatchRenderer.ts";
+import { Rect } from "../Rect";
 import { Script } from "./scripts.ts";
 import { LDtkData, LevelData } from "../types.ts";
 import { Texture } from "../Texture.ts";
 import { PhysicsBody } from "../physics/PhysicsBodies.ts";
+import { AssetManager } from "../AssetManager.ts";
 
 export class TagComponent implements Component {
   tag: string;
@@ -79,13 +81,14 @@ export class AnimationComponent implements Component {
   isPlaying: boolean;
   loop: boolean = true;
 
-  constructor(frameCount: number, frameDuration: number, baseTexCoord: Vec2) {
+  constructor(frameCount: number, frameDuration: number, baseTexCoord: Vec2, loop: boolean = true) {
     this.frameCount = frameCount;
     this.currentFrame = 0;
     this.baseTexCoord = baseTexCoord;
     this.frameDuration = frameDuration;
     this.elapsedTime = 0;
     this.isPlaying = true;
+    this.loop = loop;
   }
 
   getCurrentFrameTexSrc(spriteComponent: SpriteComponent): Vec2 {
@@ -111,14 +114,15 @@ export class AnimationStateComponent implements Component {
 export class LevelComponent implements Component {
   levelPath: string;
   levelData: LevelData;
-  textures: Record<string, Texture> = {};
+  tilesetTextures: Record<number, Texture> = {};
+  collisionRects: Array<Rect>;
 
-  constructor(levelPath: string, device: GPUDevice) {
+  constructor(levelPath: string) {
     this.levelPath = levelPath;
-    this.initialize(device);
+    this.initialize();
   }
 
-  async initialize(device: GPUDevice) {
+  async initialize() {
     const response = await fetch(this.levelPath);
     if (!response.ok) {
       throw new Error(`Failed to load level data from ${this.levelPath}`);
@@ -129,29 +133,25 @@ export class LevelComponent implements Component {
     if (parsedData.levels.length === 0) {
       throw new Error("No levels found in the provided data.");
     }
+    // Load tilesets
+    for (const tileset of parsedData.defs.tilesets) {
+      this.tilesetTextures[tileset.uid] = await AssetManager.loadTexture(tileset.identifier, tileset.relPath);
+
+    }
+
     this.levelData = parsedData.levels[0]; // Load the first level for simplicity
-    // load textures for each tileset used in the level
-    const tilesetPromises = this.levelData.layerInstances
-      .map((layer) => layer.__tilesetRelPath)
-      .filter((path, index, self) => path && self.indexOf(path) === index) // unique paths
-      .map(async (path) => {
-        if (!path) return;
 
-        const response = await fetch(`assets/${path}`);
-        const blob = await response.blob();
-        const imageBitmap = await createImageBitmap(blob);
-        const texture = new Texture(device);
-        texture.initFromBitmap(imageBitmap);
-
-        return { path, texture };
-      });
-
-    const tilesetResults = await Promise.all(tilesetPromises);
-    tilesetResults.forEach((result) => {
-      if (result) {
-        this.textures[result.path] = result.texture;
+    this.collisionRects = new Array<Rect>;
+    for (const layer of this.levelData.layerInstances) {
+      if (layer.__type == "Entities" && layer.__identifier == "CollisionLayer") {
+        console.log("Encontrei o retinho aqui");
+        for (const e of layer.entityInstances) {
+          if (e.__identifier == "CollisionGround") {
+            this.collisionRects.push(new Rect(e.px[0], e.px[1], e.width, e.height))
+          }
+        }
       }
-    });
+    }
   }
 }
 

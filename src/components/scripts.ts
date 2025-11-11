@@ -31,6 +31,7 @@ enum WalkingDirection {
 enum State {
   IDLE,
   RUNNING,
+  JUMPING,
 }
 
 export class PlayerController extends Script {
@@ -76,6 +77,10 @@ export class PlayerController extends Script {
       if (this.onGround) pb.physicsBody.velocity.y = -340;
     }
 
+    if (!this.onGround) {
+      this.currentState = State.JUMPING;
+    }
+
     if (this.walkingDirection == WalkingDirection.LEFT) {
       sc.flipped = true;
     } else sc.flipped = false;
@@ -86,6 +91,13 @@ export class PlayerController extends Script {
         break;
       case State.RUNNING:
         asc.state = "run";
+        break;
+      case State.JUMPING:
+        if (asc.state !== "jump") {
+          asc.stateToAnimationAndSpriteMap["jump"].animation.isPlaying = true;
+          asc.stateToAnimationAndSpriteMap["jump"].animation.currentFrame = 0;
+        }
+        asc.state = "jump";
         break;
     }
   }

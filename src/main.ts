@@ -44,11 +44,12 @@ window.addEventListener("load", async () => {
   InputState.initialize();
 
   BatchRenderer.init(device, context);
+  AssetManager.init(device);
 
   // ECS Example
   const w = new World();
   const l = w.createEntity("Level", true);
-  l.addComponent<LevelComponent>(new LevelComponent("../assets/level.ldtk", device));
+  l.addComponent<LevelComponent>(new LevelComponent("../assets/level-collision.ldtk", device));
   await l.getComponent(LevelComponent).initialize(device);
 
   w.addSystem(new AnimationSystem());
@@ -59,6 +60,7 @@ window.addEventListener("load", async () => {
   const e = w.createEntity("Player", true, vec2.create(90, 10), vec2.create(100, 100));
   await AssetManager.loadTexture("playerRun", "Run.png", device);
   await AssetManager.loadTexture("playerIdle", "Idle.png", device);
+  await AssetManager.loadTexture("playerJump", "Jump.png", device);
   e.addComponent<SpriteComponent>(new SpriteComponent("playerRun", vec2.create(0, 0), 128, 128));
   e.addComponent<ScriptComponent>(new ScriptComponent(new PlayerController(w, e)));
   e.addComponent<AnimationStateComponent>(
@@ -71,6 +73,10 @@ window.addEventListener("load", async () => {
         idle: {
           animation: new AnimationComponent(8, 0.1, vec2.create(0, 0)),
           sprite: new SpriteComponent("playerIdle", vec2.create(0, 0), 128, 128),
+        },
+        jump: {
+          animation: new AnimationComponent(8, 0.1, vec2.create(0, 0), false),
+          sprite: new SpriteComponent("playerJump", vec2.create(0, 0), 128, 128),
         },
       },
       "idle",

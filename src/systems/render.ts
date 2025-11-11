@@ -41,24 +41,33 @@ export class RenderSystem extends System {
       .value as LevelComponent;
 
     if (level) {
-      const texture = Object.values(level.textures)[0];
+      for (const layer of level.levelData.layerInstances) {
+        // Render tile layer
+        const layerType = layer.__type;
 
-      level.levelData.layerInstances[0].gridTiles.forEach((tile) => {
-        const tilePos = { x: tile.px[0], y: tile.px[1] };
-        const tilesetUV = { x: tile.src[0], y: tile.src[1] };
+        if (layerType == "Tiles" || layerType == "IntGrid") {
+          const gridTiles = layerType == "Tiles" ? layer.gridTiles : layer.autoLayerTiles;
+          gridTiles.forEach((tile) => {
+            const tilePos = { x: tile.px[0], y: tile.px[1] };
+            const tilesetUV = { x: tile.src[0], y: tile.src[1] };
+    
+            dst.x = tilePos.x;
+            dst.y = tilePos.y;
+            dst.w = 16;
+            dst.h = 16;
+    
+            src.x = tilesetUV.x;
+            src.y = tilesetUV.y;
+            src.w = 16;
+            src.h = 16;
+    
+            BatchRenderer.drawSprite(level.tilesetTextures[layer.__tilesetDefUid], src, dst);
+          });
+        }
+        else if (layer.__type == "IntGrid") {
 
-        dst.x = tilePos.x;
-        dst.y = tilePos.y;
-        dst.w = 16;
-        dst.h = 16;
-
-        src.x = tilesetUV.x;
-        src.y = tilesetUV.y;
-        src.w = 16;
-        src.h = 16;
-
-        BatchRenderer.drawSprite(texture, src, dst);
-      });
+        }
+      }
     } else {
       console.warn("No LevelComponent found in the world.");
     }
