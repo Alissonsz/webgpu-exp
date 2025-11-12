@@ -1,11 +1,16 @@
 import { Texture } from "./Texture";
+import { AudioEngine } from "./AudioEngine"
 
 export class AssetManager {
   private static textures: Map<string, Texture> = new Map();
-  private static gpuDevice: GPUDevice;
+  private static sounds: Map<string, AudioBuffer> = new Map();
 
-  public static init(gpuDevice: GPUDevice): boolean {
+  private static gpuDevice: GPUDevice;
+  private static audioContext: AudioContext;
+
+  public static init(gpuDevice: GPUDevice, audioContext?: AudioContext): boolean {
     this.gpuDevice = gpuDevice;
+    this.audioContext = audioContext;
 
     return true;
   }
@@ -21,7 +26,23 @@ export class AssetManager {
     return texture;
   }
 
+  public static async loadSound(name: string, url: string) {
+    if (name.length == 0) {
+      throw new Error("Sound name cannot be empty");
+    }
+
+    const response    = await fetch(url);
+    const arrayBuffer = await response.arrayBuffer();
+    const audioBuffer = await this.audioContext.decodeAudioData(arrayBuffer);
+    
+    this.sounds.set(name, audioBuffer);
+  }
+
   public static getTexture(name: string): Texture | undefined {
     return this.textures.get(name);
   }
-}
+
+  public static getSound(name: string): AudioBuffer | undefined {
+    return this.sounds.get(name);
+  }
+ }

@@ -3,6 +3,7 @@ import { Entity, World } from "../ecs/World";
 import { GameEvent } from "../EventQueue";
 import { InputState, Keys } from "../InputState";
 import { PhysicsSystem } from "../systems/physics";
+import { AudioSystem } from "../systems/audio";
 
 export abstract class Script {
   world: World;
@@ -50,6 +51,7 @@ export class PlayerController extends Script {
     const asc = this.entity.getComponent(AnimationStateComponent);
 
     const physicsSystem = this.world.getSystem(PhysicsSystem);
+    const audioSystem   = this.world.getSystem(AudioSystem);
     this.onGround = physicsSystem.isOnGround(this.entity);
 
     const JUMP_VELOCITY = 200;
@@ -74,7 +76,10 @@ export class PlayerController extends Script {
     }
 
     if (InputState.isKeyPressed(Keys.Space)) {
-      if (this.onGround) pb.physicsBody.velocity.y = -340;
+      if (this.onGround) {
+        pb.physicsBody.velocity.y = -340;
+        audioSystem.playSFX("jump");
+      }
     }
 
     if (!this.onGround) {

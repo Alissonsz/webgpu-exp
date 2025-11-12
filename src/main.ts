@@ -8,7 +8,6 @@ import {
   ScriptComponent,
   LevelComponent,
   PhysicsBodyComponent,
-  TransformComponent,
   AnimationComponent,
   AnimationStateComponent,
 } from "./components";
@@ -21,6 +20,8 @@ import { CameraController, PlayerController } from "./components/scripts";
 import { Collider, PhysicsBody } from "./physics/PhysicsBodies";
 import { AssetManager } from "./AssetManager.ts";
 import { AnimationSystem } from "./systems/animation.ts";
+import { AudioSystem } from "./systems/audio";
+import { AudioEngine } from "./AudioEngine";
 
 window.addEventListener("load", async () => {
   console.log("Window loaded");
@@ -43,8 +44,11 @@ window.addEventListener("load", async () => {
 
   InputState.initialize();
 
+  AudioEngine.init();
   BatchRenderer.init(device, context);
-  AssetManager.init(device);
+  AssetManager.init(device, AudioEngine.audioContext);
+
+  AssetManager.loadSound("jump", "../assets/jump.mp3");
 
   // ECS Example
   const w = new World();
@@ -56,6 +60,7 @@ window.addEventListener("load", async () => {
   w.addSystem(new RenderSystem());
   w.addSystem(new ScriptSystem());
   w.addSystem(new PhysicsSystem());
+  w.addSystem(new AudioSystem());
 
   const playerColliderOffsetPercentage = vec2.create(0.2, 0.55);
   const playerColliderPercentage = 0.45;
