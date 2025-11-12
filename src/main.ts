@@ -44,22 +44,26 @@ window.addEventListener("load", async () => {
   InputState.initialize();
 
   BatchRenderer.init(device, context);
+  AssetManager.init(device);
 
   // ECS Example
   const w = new World();
   const l = w.createEntity("Level", true);
-  l.addComponent<LevelComponent>(new LevelComponent("../assets/level.ldtk", device));
-  await l.getComponent(LevelComponent).initialize(device);
+  l.addComponent<LevelComponent>(new LevelComponent("../assets/level-collision.ldtk"));
+  await l.getComponent(LevelComponent).initialize();
 
   w.addSystem(new AnimationSystem());
   w.addSystem(new RenderSystem());
   w.addSystem(new ScriptSystem());
   w.addSystem(new PhysicsSystem());
 
-  const e = w.createEntity("Player", true, vec2.create(90, 10), vec2.create(100, 100));
-  await AssetManager.loadTexture("playerRun", "Run.png", device);
-  await AssetManager.loadTexture("playerIdle", "Idle.png", device);
-  await AssetManager.loadTexture("playerJump", "Jump.png", device);
+  const playerColliderOffsetPercentage = vec2.create(0.2, 0.55);
+  const playerColliderPercentage = 0.45;
+  const playerSize = vec2.create(100, 100);
+  const e = w.createEntity("Player", true, vec2.create(90, 10), playerSize);
+  await AssetManager.loadTexture("playerRun", "Run.png");
+  await AssetManager.loadTexture("playerIdle", "Idle.png");
+  await AssetManager.loadTexture("playerJump", "Jump.png");
   e.addComponent<SpriteComponent>(new SpriteComponent("playerRun", vec2.create(0, 0), 128, 128));
   e.addComponent<ScriptComponent>(new ScriptComponent(new PlayerController(w, e)));
   e.addComponent<AnimationStateComponent>(
@@ -88,25 +92,12 @@ window.addEventListener("load", async () => {
         vec2.create(0, 0),
         vec2.create(0, 0),
         false,
-        new Collider(false, vec2.create(20, 55), vec2.create(45, 45)),
+        new Collider(false, 
+          vec2.create(Math.floor(playerSize.x * playerColliderOffsetPercentage.x), Math.floor(playerSize.y * playerColliderOffsetPercentage.y)), 
+          vec2.create(Math.floor(playerSize.x * playerColliderPercentage), Math.floor(playerSize.y * playerColliderPercentage))), 
       ),
     ),
   );
-
-  const f = w.createEntity("Floor", true, vec2.create(80, 160), vec2.create(530, 18));
-  f.addComponent(new PhysicsBodyComponent(new PhysicsBody(vec2.create(0, 0), vec2.create(0, 0), true)));
-
-  const b1 = w.createEntity("Block", true, vec2.create(330, 20), vec2.create(40, 50));
-  b1.addComponent(new SpriteComponent(undefined, undefined, undefined, undefined, { r: 1, g: 0, b: 0, a: 1 }));
-  b1.addComponent(new PhysicsBodyComponent(new PhysicsBody()));
-
-  const b2 = w.createEntity("Block2", true, vec2.create(350, -120), vec2.create(20, 20));
-  b2.addComponent(new SpriteComponent(undefined, undefined, undefined, undefined, { r: 1, g: 0, b: 0, a: 1 }));
-  b2.addComponent(new PhysicsBodyComponent(new PhysicsBody()));
-
-  const b3 = w.createEntity("Block3", true, vec2.create(450, -420), vec2.create(120, 20));
-  b3.addComponent(new SpriteComponent(undefined, undefined, undefined, undefined, { r: 1, g: 0, b: 0, a: 1 }));
-  b3.addComponent(new PhysicsBodyComponent(new PhysicsBody()));
 
   const c = w.createEntity("Camera", true, vec2.create(0, 0), vec2.create(0, 0));
   c.addComponent(new CameraComponent(new Camera(vec2.create(10, -50), vec2.create(orthoWidth, orthoHeight)), true));
@@ -135,8 +126,6 @@ window.addEventListener("load", async () => {
     device.queue.submit([commandEncoder.finish()]);
 
     w.update(deltaTime / 1000);
-
-    const t = b1.getComponent(TransformComponent);
 
     requestAnimationFrame(gameLoop);
   }

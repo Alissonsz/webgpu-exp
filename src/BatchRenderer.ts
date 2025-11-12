@@ -81,7 +81,10 @@ export class BatchRenderer {
 
     BatchRenderer.device = device;
     BatchRenderer.context = context;
-    BatchRenderer.sampler = BatchRenderer.device.createSampler();
+    BatchRenderer.sampler = BatchRenderer.device.createSampler({
+      minFilter: "nearest",
+      magFilter: "nearest"
+    });
 
     BatchRenderer.vertexBufferData = new Float32Array(MAX_VERTICES_PER_BATCH * VertexData.F32_LENGTH);
 
@@ -177,7 +180,7 @@ export class BatchRenderer {
       binding: 1,
       visibility: GPUShaderStage.FRAGMENT,
       sampler: {
-        type: "non-filtering",
+        type: "filtering"
       },
     });
 

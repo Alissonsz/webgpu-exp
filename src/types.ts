@@ -21,7 +21,8 @@ export interface LayerInstance {
   pxOffsetX: number;
   pxOffsetY: number;
   visible: boolean;
-  gridTiles: TileData[];
+  gridTiles?: TileData[];
+  autoLayerTiles?: TileData[];
   entityInstances: any[]; // Can be expanded if entities are used
 }
 
