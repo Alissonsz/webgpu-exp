@@ -49,6 +49,10 @@ window.addEventListener("load", async () => {
   AssetManager.init(device, AudioEngine.audioContext);
 
   AssetManager.loadSound("jump", "../assets/jump.mp3");
+  AssetManager.loadSound("landing", "../assets/landing.mp3");
+  AssetManager.loadSound("step", "../assets/step.wav");
+  AssetManager.loadSound("step_r", "../assets/step_r.wav");
+  AssetManager.loadSound("step_l", "../assets/step_l.wav");
 
   // ECS Example
   const w = new World();

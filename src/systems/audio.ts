@@ -24,5 +24,15 @@ export class AudioSystem extends System {
   }
 
   playMusic(soundName: string) {
+    const buf = AssetManager.getSound(soundName);
+    // TODO: To help find errors, play an 'error' sound
+    if (!buf) {
+      console.log(`Warning: Unkown sound ${soundName}. Ignoring.`);
+      return;
+    }
+
+    const node = AudioEngine.createAudioNode(buf);
+    AudioEngine.connectMusicNodeToDestination(node);
+    node.start();
   }
 }
