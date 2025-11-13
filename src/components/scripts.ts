@@ -39,20 +39,52 @@ export class PlayerController extends Script {
   walkingDirection = WalkingDirection.RIGHT;
   currentState = State.IDLE;
   onGround = false;
+  lastRunningFrame = -1;
 
   onCreate(): void {
     console.log("PlayerController created for entity:", this.entity);
   }
 
+  handleSounds() {
+    const audioSystem   = this.world.getSystem(AudioSystem);
+    const asc = this.entity.getComponent(AnimationStateComponent);
+
+    // Just landed
+    if (this.currentState == State.JUMPING && this.onGround) {
+      audioSystem.playSFX("landing");
+    }
+
+    const currentAnimation = asc.stateToAnimationAndSpriteMap[asc.state].animation;
+    if (this.currentState != State.RUNNING) this.lastRunningFrame = -1;
+    else {
+      if (this.lastRunningFrame != currentAnimation.currentFrame) {
+        this.lastRunningFrame = currentAnimation.currentFrame;
+        if (currentAnimation.currentFrame == 7) {
+          audioSystem.playSFX("step_r");
+        }
+        if (currentAnimation.currentFrame == 3) {
+          audioSystem.playSFX("step_l");
+        }
+      }
+    }
+
+    if (InputState.isKeyPressed(Keys.Space)) {
+      if (this.onGround) {
+        audioSystem.playSFX("jump");
+      }
+    }
+  }
+
   onUpdate(deltaTime: number): void {
-    const tc = this.entity.getComponent(TransformComponent);
-    const pb = this.entity.getComponent(PhysicsBodyComponent);
-    const sc = this.entity.getComponent(SpriteComponent);
+    const tc  = this.entity.getComponent(TransformComponent);
+    const pb  = this.entity.getComponent(PhysicsBodyComponent);
+    const sc  = this.entity.getComponent(SpriteComponent);
     const asc = this.entity.getComponent(AnimationStateComponent);
 
     const physicsSystem = this.world.getSystem(PhysicsSystem);
-    const audioSystem   = this.world.getSystem(AudioSystem);
     this.onGround = physicsSystem.isOnGround(this.entity);
+
+    this.handleSounds();
 
     const JUMP_VELOCITY = 200;
     const AIR_VELOCITY_REDUCTION = 50;
@@ -78,7 +110,6 @@ export class PlayerController extends Script {
     if (InputState.isKeyPressed(Keys.Space)) {
       if (this.onGround) {
         pb.physicsBody.velocity.y = -340;
-        audioSystem.playSFX("jump");
       }
     }
 
