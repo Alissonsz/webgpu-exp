@@ -189,7 +189,6 @@ export class WalkingDustController extends Script {
     const playerVelocity = playerPb.physicsBody.velocity.x;
     const playerOnGround = physicsSystem.isOnGround(player);
 
-    if (playerPb.physicsBody.velocity.y > 0 && playerOnGround) console.log("player landed");
     if (playerVelocity != 0 && playerOnGround) {
       ec.active = true;
 
