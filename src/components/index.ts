@@ -1,5 +1,5 @@
 import { Component } from "../ecs/Component.ts";
-import { vec2, Vec2 } from "@gustavo4passos/wgpu-matrix";
+import { vec2, Vec2, vec4 } from "@gustavo4passos/wgpu-matrix";
 import { Camera } from "../Camera.ts";
 import { Color } from "../BatchRenderer.ts";
 import { Rect } from "../Rect";
@@ -8,6 +8,7 @@ import { LDtkData, LevelData } from "../types.ts";
 import { Texture } from "../Texture.ts";
 import { PhysicsBody } from "../physics/PhysicsBodies.ts";
 import { AssetManager } from "../AssetManager.ts";
+import { Particle, ParticleParameters } from "../Particles.ts";
 
 export class TagComponent implements Component {
   tag: string;
@@ -164,5 +165,34 @@ export class PhysicsBodyComponent {
     else this.physicsBody = physicsBody;
 
     this.active = true;
+  }
+}
+
+export class ParticleEmmiterComponent {
+  static readonly MAX_PARTICLES = 100;
+  active: boolean;
+  particleParamters: ParticleParameters;
+  particles: Array<Particle>;
+  nextActiveParticle: number;
+  internalTime: number;
+
+  constructor(parameters: ParticleParameters) {
+    this.active = true;
+    this.particleParamters = parameters;
+    this.nextActiveParticle = ParticleEmmiterComponent.MAX_PARTICLES - 1;
+    this.internalTime = 0;
+
+    this.particles = new Array<Particle>();
+
+    for (let i = 0; i < ParticleEmmiterComponent.MAX_PARTICLES; i++) {
+      this.particles.push({
+        active: false,
+        position: vec2.create(0, 0),
+        velocity: vec2.create(0, 0),
+        color: vec4.create(0, 0, 0, 0),
+        size: vec2.create(0, 0),
+        lifeRemaining: 0
+      });
+    }
   }
 }

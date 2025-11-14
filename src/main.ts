@@ -1,5 +1,5 @@
 import { initializeWebgpu } from "./renderer";
-import { vec2 } from "@gustavo4passos/wgpu-matrix";
+import { vec2, vec4 } from "@gustavo4passos/wgpu-matrix";
 import { InputState } from "./InputState";
 import { World } from "./ecs";
 import {
@@ -10,18 +10,20 @@ import {
   PhysicsBodyComponent,
   AnimationComponent,
   AnimationStateComponent,
+  ParticleEmmiterComponent,
 } from "./components";
 import { Camera } from "./Camera.ts";
 import { RenderSystem } from "./systems/render.ts";
 import { ScriptSystem } from "./systems/script.ts";
 import { PhysicsSystem } from "./systems/physics.ts";
 import { BatchRenderer } from "./BatchRenderer.ts";
-import { CameraController, PlayerController } from "./components/scripts";
+import { CameraController, PlayerController, WalkingDustController } from "./components/scripts";
 import { Collider, PhysicsBody } from "./physics/PhysicsBodies";
 import { AssetManager } from "./AssetManager.ts";
 import { AnimationSystem } from "./systems/animation.ts";
 import { AudioSystem } from "./systems/audio";
 import { AudioEngine } from "./AudioEngine";
+import { ParticleSystem } from "./systems/particle"
 
 window.addEventListener("load", async () => {
   console.log("Window loaded");
@@ -48,11 +50,11 @@ window.addEventListener("load", async () => {
   BatchRenderer.init(device, context);
   AssetManager.init(device, AudioEngine.audioContext);
 
-  AssetManager.loadSound("jump", "../assets/jump.mp3");
-  AssetManager.loadSound("landing", "../assets/landing.mp3");
-  AssetManager.loadSound("step", "../assets/step.wav");
-  AssetManager.loadSound("step_r", "../assets/step_r.wav");
-  AssetManager.loadSound("step_l", "../assets/step_l.wav");
+  AssetManager.loadSound("jump", "../assets/sounds/jump.mp3");
+  AssetManager.loadSound("landing", "../assets/sounds/landing.mp3");
+  AssetManager.loadSound("step", "../assets/sounds/step.wav");
+  AssetManager.loadSound("step_r", "../assets/sounds/step_r.wav");
+  AssetManager.loadSound("step_l", "../assets/sounds/step_l.wav");
 
   // ECS Example
   const w = new World();
@@ -60,11 +62,12 @@ window.addEventListener("load", async () => {
   l.addComponent<LevelComponent>(new LevelComponent("../assets/level-collision.ldtk"));
   await l.getComponent(LevelComponent).initialize();
 
-  w.addSystem(new AnimationSystem());
-  w.addSystem(new RenderSystem());
-  w.addSystem(new ScriptSystem());
   w.addSystem(new PhysicsSystem());
+  w.addSystem(new AnimationSystem());
+  w.addSystem(new ScriptSystem());
+  w.addSystem(new ParticleSystem());
   w.addSystem(new AudioSystem());
+  w.addSystem(new RenderSystem());
 
   const playerColliderOffsetPercentage = vec2.create(0.2, 0.55);
   const playerColliderPercentage = 0.45;
@@ -111,6 +114,43 @@ window.addEventListener("load", async () => {
   const c = w.createEntity("Camera", true, vec2.create(0, 0), vec2.create(0, 0));
   c.addComponent(new CameraComponent(new Camera(vec2.create(10, -50), vec2.create(orthoWidth, orthoHeight)), true));
   c.addComponent<ScriptComponent>(new ScriptComponent(new CameraController(w, c)));
+
+  const p = w.createEntity("ParticleEmitter", true, vec2.create(100, 100), vec2.create(0, 0));
+  p.addComponent<ParticleEmmiterComponent>(new ParticleEmmiterComponent({
+    initialVelocity: vec2.create(-20, -10),
+    velocityVariation: vec2.create(5, 25),
+    lifetime: 0.3,
+    initialColor: vec4.create(0.75, 0.64, 0.51, 0.6),
+    finalColor: vec4.create(0.75, 0.64, 0.51, 0),
+    initialSize: vec2.create(2, 2),
+    finalSize: vec2.create(8, 8),
+    emissionTime: 0.02
+  }));
+  p.addComponent<ScriptComponent>(new ScriptComponent(new WalkingDustController(w, p)));
+
+  const f = w.createEntity("Fire", true, vec2.create(100, 160), vec2.create(0, 0));
+  f.addComponent<ParticleEmmiterComponent>(new ParticleEmmiterComponent({
+    initialVelocity: vec2.create(0, -35),
+    velocityVariation: vec2.create(20, 10),
+    lifetime: 2,
+    initialColor: vec4.create(0.85, 0.3, 0.1, 0.7),
+    finalColor: vec4.create(0.85, 0.1, 0.1, 0),
+    initialSize: vec2.create(2, 2),
+    finalSize: vec2.create(8, 8),
+    emissionTime: 0.02
+  }));
+
+  const f2 = w.createEntity("Fire2", true, vec2.create(400, 100), vec2.create(0, 0));
+  f2.addComponent<ParticleEmmiterComponent>(new ParticleEmmiterComponent({
+    initialVelocity: vec2.create(0, -25),
+    velocityVariation: vec2.create(20, 10),
+    lifetime: 2,
+    initialColor: vec4.create(0.85, 0.1, 0.1, 0.6),
+    finalColor: vec4.create(0.85, 0.64, 0.1, 0),
+    initialSize: vec2.create(2, 2),
+    finalSize: vec2.create(8, 8),
+    emissionTime: 0.05
+  }));
 
   let lastRender = performance.now();
 
