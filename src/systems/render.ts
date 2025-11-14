@@ -1,4 +1,4 @@
-import { System, World } from "../ecs";
+import { System } from "../ecs";
 import { BatchRenderer, Color } from "../BatchRenderer.ts";
 import {
   CameraComponent,
@@ -11,6 +11,8 @@ import {
 import { Rect } from "../Rect.ts";
 import { Camera } from "../Camera.ts";
 import { AssetManager } from "../AssetManager.ts";
+import { Texture } from "../Texture.ts";
+import { Sprite } from "../Sprite.ts";
 
 export class RenderSystem extends System {
   constructor() {
@@ -43,6 +45,13 @@ export class RenderSystem extends System {
     // Draw particles
     for (const [_, p, t] of this.world.queryComponents(ParticleEmmiterComponent, TransformComponent)) {
       const pc = p as ParticleEmmiterComponent;
+      let particleTexture: Texture;
+      let particleSprite: Sprite;
+      if (pc.particleParamters.sprite) {
+        particleTexture = AssetManager.getTexture(pc.particleParamters.sprite.spriteSheet.texture);
+        particleSprite = pc.particleParamters.sprite;
+      }
+
       for (const particle of pc.particles) {
         if (!particle.active) continue;
         dst.x = particle.position.x;
@@ -55,7 +64,10 @@ export class RenderSystem extends System {
         color.b = particle.color.b;
         color.a = particle.color.a;
 
-        BatchRenderer.drawRect(dst, color);
+        if (pc.particleParamters.sprite)
+        {
+          BatchRenderer.drawSprite(particleTexture, particleSprite.rect, dst, color);
+        } else BatchRenderer.drawRect(dst, color);
       }
     }
 
@@ -127,6 +139,7 @@ export class RenderSystem extends System {
         BatchRenderer.drawRect(collisionRect, { r: 1, g: 0, b: 0, a: 0.3 });
       }
     }
+
     BatchRenderer.end();
   }
 }

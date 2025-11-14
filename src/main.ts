@@ -24,6 +24,7 @@ import { AnimationSystem } from "./systems/animation.ts";
 import { AudioSystem } from "./systems/audio";
 import { AudioEngine } from "./AudioEngine";
 import { ParticleSystem } from "./systems/particle"
+import { Sprite, SpriteSheet } from "./Sprite.ts";
 
 window.addEventListener("load", async () => {
   console.log("Window loaded");
@@ -55,6 +56,8 @@ window.addEventListener("load", async () => {
   AssetManager.loadSound("step", "../assets/sounds/step.wav");
   AssetManager.loadSound("step_r", "../assets/sounds/step_r.wav");
   AssetManager.loadSound("step_l", "../assets/sounds/step_l.wav");
+  AssetManager.loadTexture("smoke", "../assets/smoke.png");
+  AssetManager.loadTexture("smoke2", "../assets/smoke2.png");
 
   // ECS Example
   const w = new World();
@@ -115,20 +118,27 @@ window.addEventListener("load", async () => {
   c.addComponent(new CameraComponent(new Camera(vec2.create(10, -50), vec2.create(orthoWidth, orthoHeight)), true));
   c.addComponent<ScriptComponent>(new ScriptComponent(new CameraController(w, c)));
 
-  const p = w.createEntity("ParticleEmitter", true, vec2.create(100, 100), vec2.create(0, 0));
+  const smokeSpriteSheet = new SpriteSheet("smoke", vec2.create(512, 512), 1);
+  const smokeSprite = new Sprite(smokeSpriteSheet, 0);
+
+  const smoke2SpriteSheet = new SpriteSheet("smoke2", vec2.create(512, 512), 1);
+  const smoke2Sprite      = new Sprite(smoke2SpriteSheet, 0);
+
+  const p = w.createEntity("PlayerDust", true, vec2.create(100, 100), vec2.create(0, 0));
   p.addComponent<ParticleEmmiterComponent>(new ParticleEmmiterComponent({
     initialVelocity: vec2.create(-20, -10),
     velocityVariation: vec2.create(5, 25),
-    lifetime: 0.3,
-    initialColor: vec4.create(0.75, 0.64, 0.51, 0.6),
-    finalColor: vec4.create(0.75, 0.64, 0.51, 0),
+    lifetime: 0.2,
+    initialColor: vec4.create(0.95, 0.64, 0.51, 1.0),
+    finalColor: vec4.create(0.95, 0.64, 0.51, 0.0),
     initialSize: vec2.create(2, 2),
-    finalSize: vec2.create(8, 8),
-    emissionTime: 0.02
+    finalSize: vec2.create(15, 15),
+    emissionTime: 0.02,
+    sprite: smokeSprite
   }));
   p.addComponent<ScriptComponent>(new ScriptComponent(new WalkingDustController(w, p)));
 
-  const f = w.createEntity("Fire", true, vec2.create(100, 155), vec2.create(0, 0));
+  const f = w.createEntity("Fire", true, vec2.create(95, 10), vec2.create(0, 0));
   f.addComponent<ParticleEmmiterComponent>(new ParticleEmmiterComponent({
     initialVelocity: vec2.create(0, -45),
     velocityVariation: vec2.create(40, 10),
@@ -137,7 +147,7 @@ window.addEventListener("load", async () => {
     finalColor: vec4.create(0.85, 0.1, 0.1, 0),
     initialSize: vec2.create(7, 7),
     finalSize: vec2.create(3, 3),
-    emissionTime: 0.03
+    emissionTime: 0.03,
   }));
 
   const f2 = w.createEntity("Fire2", true, vec2.create(250, 40), vec2.create(0, 0));
@@ -149,19 +159,22 @@ window.addEventListener("load", async () => {
     finalColor: vec4.create(0.9, 0.7, 0.3, 0),
     initialSize: vec2.create(1, 1),
     finalSize: vec2.create(100, 100),
-    emissionTime: 0.03
+    emissionTime: 0.03,
+    sprite: smoke2Sprite
   }));
 
-  const f3 = w.createEntity("Fire3", true, vec2.create(95, 40), vec2.create(0, 0));
+
+  const f3 = w.createEntity("Fire3", true, vec2.create(100, 165), vec2.create(0, 0));
   f3.addComponent<ParticleEmmiterComponent>(new ParticleEmmiterComponent({
     initialVelocity: vec2.create(0, -70),
     velocityVariation: vec2.create(50, 40),
     lifetime: 2,
-    initialColor: vec4.create(0.3, 0.3, 0.9, 0.7),
+    initialColor: vec4.create(1.0, 1.0, 1.0, 1.0),
     finalColor: vec4.create(0.9, 0.7, 0.3, 0),
     initialSize: vec2.create(1, 1),
     finalSize: vec2.create(100, 100),
-    emissionTime: 0.03
+    emissionTime: 0.03,
+    sprite: smokeSprite
   }));
 
   let lastRender = performance.now();
@@ -179,6 +192,7 @@ window.addEventListener("load", async () => {
           loadOp: "clear",
           storeOp: "store",
           view: context.getCurrentTexture().createView(),
+          clearValue: { r: 0.52, g: 0.8, b: 0.91, a: 1.0 },
         },
       ],
     });
