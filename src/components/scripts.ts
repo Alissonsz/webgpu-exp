@@ -168,7 +168,7 @@ export class WalkingDustController extends Script {
   constructor(world: World, e: Entity) {
     super(world, e);
 
-    this.initialVelocity = vec2.create(-10, -5);
+    this.initialVelocity = vec2.create(-10, -20);
     this.velocityVariation = vec2.create(5, 2);
     this.offset = vec2.create(2, 2);
   }
@@ -183,21 +183,24 @@ export class WalkingDustController extends Script {
     const ec = this.entity.getComponent(ParticleEmmiterComponent);
     const physicsSystem = this.world.getSystem(PhysicsSystem);
 
-    dustTc.position.x = playerTc.position.x + playerPb.physicsBody.collider.offset.x + playerPb.physicsBody.collider.size.x / 2;
     dustTc.position.y = playerTc.position.y + playerPb.physicsBody.collider.offset.y;
     dustTc.position.y += playerPb.physicsBody.collider.size.y - this.offset.y;
 
     const playerVelocity = playerPb.physicsBody.velocity.x;
     const playerOnGround = physicsSystem.isOnGround(player);
+
+    if (playerPb.physicsBody.velocity.y > 0 && playerOnGround) console.log("player landed");
     if (playerVelocity != 0 && playerOnGround) {
       ec.active = true;
 
       // Moving to the right
       if (playerVelocity > 0) {
+        dustTc.position.x = playerTc.position.x + playerPb.physicsBody.collider.offset.x;
         ec.particleParamters.initialVelocity.x = this.initialVelocity.x;
       } 
       // Moving to the left
       else {
+        dustTc.position.x = playerTc.position.x + playerPb.physicsBody.collider.offset.x + playerPb.physicsBody.collider.size.x / 2;
         ec.particleParamters.initialVelocity.x = -this.initialVelocity.x;
       }
     } else ec.active = false;

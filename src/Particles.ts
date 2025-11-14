@@ -1,4 +1,5 @@
 import { Vec2, Vec4 } from "@gustavo4passos/wgpu-matrix";
+import { Sprite } from "./Sprite";
 
 export type Particle = {
   active: boolean;
@@ -18,4 +19,5 @@ export type ParticleParameters = {
   initialSize: Vec2;
   finalSize: Vec2;
   emissionTime: number;
+  sprite?: Sprite;
 };
