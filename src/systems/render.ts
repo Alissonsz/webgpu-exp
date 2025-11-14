@@ -10,9 +10,7 @@ import {
 } from "../components/index.ts";
 import { Rect } from "../Rect.ts";
 import { Camera } from "../Camera.ts";
-import { LevelData } from "../types.ts";
 import { AssetManager } from "../AssetManager.ts";
-import { PhysicsBody } from "../physics/PhysicsBodies.ts";
 
 export class RenderSystem extends System {
   constructor() {
@@ -42,6 +40,25 @@ export class RenderSystem extends System {
     const level = this.world.getComponentManager().getComponentsOfType(LevelComponent).values().next()
       .value as LevelComponent;
 
+    // Draw particles
+    for (const [_, p, t] of this.world.queryComponents(ParticleEmmiterComponent, TransformComponent)) {
+      const pc = p as ParticleEmmiterComponent;
+      for (const particle of pc.particles) {
+        if (!particle.active) continue;
+        dst.x = particle.position.x;
+        dst.y = particle.position.y;
+        dst.w = particle.size.x;
+        dst.h = particle.size.y;
+
+        color.r = particle.color.r;
+        color.g = particle.color.g;
+        color.b = particle.color.b;
+        color.a = particle.color.a;
+
+        BatchRenderer.drawRect(dst, color);
+      }
+    }
+
     // Draw level
     if (level) {
       for (const layer of level.levelData.layerInstances) {
@@ -67,9 +84,6 @@ export class RenderSystem extends System {
             BatchRenderer.drawSprite(level.tilesetTextures[layer.__tilesetDefUid], src, dst);
           });
         }
-        else if (layer.__type == "IntGrid") {
-
-        }
       }
     } else {
       console.warn("No LevelComponent found in the world.");
@@ -77,25 +91,6 @@ export class RenderSystem extends System {
 
     const r: Rect = new Rect(0, 0, 0, 0);
 
-    // Draw particles
-    for (const [_, p, t] of this.world.queryComponents(ParticleEmmiterComponent, TransformComponent)) {
-      const pc = p as ParticleEmmiterComponent;
-      const tc = t as TransformComponent;
-      for (const particle of pc.particles) {
-        if (!particle.active) continue;
-        dst.x = particle.position.x;
-        dst.y = particle.position.y;
-        dst.w = particle.size.x;
-        dst.h = particle.size.y;
-
-        color.r = particle.color.r;
-        color.g = particle.color.g;
-        color.b = particle.color.b;
-        color.a = particle.color.a;
-
-        BatchRenderer.drawRect(dst, color);
-      }
-    }
 
     for (const [_, s, t] of this.world.queryComponents(SpriteComponent, TransformComponent)) {
       const spriteComp = s as SpriteComponent;
