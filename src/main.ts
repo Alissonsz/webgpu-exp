@@ -27,6 +27,7 @@ import { AudioEngine } from "./AudioEngine";
 import { ParticleSystem } from "./systems/particle"
 import { Sprite, SpriteSheet } from "./Sprite.ts";
 import { TextRenderer } from "./TextRenderer.ts";
+import { InputSystem } from "./systems/input.ts";
 
 window.addEventListener("load", async () => {
   console.log("Window loaded");
@@ -81,6 +82,7 @@ window.addEventListener("load", async () => {
   w.addSystem(new ParticleSystem());
   w.addSystem(new AudioSystem());
   w.addSystem(new RenderSystem());
+  w.addSystem(new InputSystem());
 
   const playerColliderOffsetPercentage = vec2.create(0.2, 0.55);
   const playerColliderPercentage = 0.45;
