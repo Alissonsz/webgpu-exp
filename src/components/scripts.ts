@@ -51,7 +51,7 @@ export class PlayerController extends Script {
     const asc = this.entity.getComponent(AnimationStateComponent);
 
     const physicsSystem = this.world.getSystem(PhysicsSystem);
-    const audioSystem   = this.world.getSystem(AudioSystem);
+    const audioSystem = this.world.getSystem(AudioSystem);
     this.onGround = physicsSystem.isOnGround(this.entity);
 
     const JUMP_VELOCITY = 200;
@@ -76,7 +76,7 @@ export class PlayerController extends Script {
     }
 
     if (InputState.isKeyPressed(Keys.Space)) {
-      if (this.onGround) {
+      if (this.onGround && InputState.getKeyState(Keys.Space).lastPressedTime + 100 > performance.now()) {
         pb.physicsBody.velocity.y = -340;
         audioSystem.playSFX("jump");
       }
@@ -84,6 +84,9 @@ export class PlayerController extends Script {
 
     if (!this.onGround) {
       this.currentState = State.JUMPING;
+
+      if (!InputState.getKeyState(Keys.Space).pressed && pb.physicsBody.velocity.y < 0)
+        pb.physicsBody.velocity.y += 100;
     }
 
     if (this.walkingDirection == WalkingDirection.LEFT) {
