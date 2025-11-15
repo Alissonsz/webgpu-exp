@@ -11,6 +11,7 @@ import {
   AnimationComponent,
   AnimationStateComponent,
   ParticleEmmiterComponent,
+  TextComponent,
 } from "./components";
 import { Camera } from "./Camera.ts";
 import { RenderSystem } from "./systems/render.ts";
@@ -25,6 +26,7 @@ import { AudioSystem } from "./systems/audio";
 import { AudioEngine } from "./AudioEngine";
 import { ParticleSystem } from "./systems/particle"
 import { Sprite, SpriteSheet } from "./Sprite.ts";
+import { TextRenderer } from "./TextRenderer.ts";
 
 window.addEventListener("load", async () => {
   console.log("Window loaded");
@@ -37,6 +39,14 @@ window.addEventListener("load", async () => {
 
   canvas.width = canvas.clientWidth * devicePixelRatio;
   canvas.height = canvas.clientHeight * devicePixelRatio;
+
+  const textCanvas = document.getElementById("text-canvas") as HTMLCanvasElement;
+  if (!textCanvas) {
+    console.error("Text canvas element not found.");
+    return;
+  }
+
+  TextRenderer.init(textCanvas, canvas.width, canvas.height);
 
   // Use orthographic projection for 2D tile rendering
   const aspectRatio = canvas.clientWidth / canvas.clientHeight;
@@ -107,12 +117,21 @@ window.addEventListener("load", async () => {
         vec2.create(0, 0),
         vec2.create(0, 0),
         false,
-        new Collider(false, 
-          vec2.create(Math.floor(playerSize.x * playerColliderOffsetPercentage.x), Math.floor(playerSize.y * playerColliderOffsetPercentage.y)), 
-          vec2.create(Math.floor(playerSize.x * playerColliderPercentage), Math.floor(playerSize.y * playerColliderPercentage))), 
+        new Collider(
+          false,
+          vec2.create(
+            Math.floor(playerSize.x * playerColliderOffsetPercentage.x),
+            Math.floor(playerSize.y * playerColliderOffsetPercentage.y),
+          ),
+          vec2.create(
+            Math.floor(playerSize.x * playerColliderPercentage),
+            Math.floor(playerSize.y * playerColliderPercentage),
+          ),
+        ),
       ),
     ),
   );
+  e.addComponent(new TextComponent("Hello World", vec2.create(10, 50), 48, "#000000"));
 
   const c = w.createEntity("Camera", true, vec2.create(0, 0), vec2.create(0, 0));
   c.addComponent(new CameraComponent(new Camera(vec2.create(10, -50), vec2.create(orthoWidth, orthoHeight)), true));
