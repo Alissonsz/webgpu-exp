@@ -137,17 +137,16 @@ export class LevelComponent implements Component {
     for (const tileset of parsedData.defs.tilesets) {
       if (!tileset.relPath) continue;
       this.tilesetTextures[tileset.uid] = await AssetManager.loadTexture(tileset.identifier, tileset.relPath);
-
     }
 
     this.levelData = parsedData.levels[0]; // Load the first level for simplicity
 
-    this.collisionRects = new Array<Rect>;
+    this.collisionRects = new Array<Rect>();
     for (const layer of this.levelData.layerInstances) {
       if (layer.__type == "Entities" && layer.__identifier == "CollisionLayer") {
         for (const e of layer.entityInstances) {
           if (e.__identifier == "CollisionGround") {
-            this.collisionRects.push(new Rect(e.px[0], e.px[1], e.width, e.height))
+            this.collisionRects.push(new Rect(e.px[0], e.px[1], e.width, e.height));
           }
         }
       }
@@ -164,5 +163,21 @@ export class PhysicsBodyComponent {
     else this.physicsBody = physicsBody;
 
     this.active = true;
+  }
+}
+
+export class TextComponent implements Component {
+  text: string;
+  pos: Vec2;
+  fontSize: number;
+  color: string;
+  maxWidth?: number;
+
+  constructor(text: string, pos: Vec2, fontSize: number, color: string, maxWidth?: number) {
+    this.text = text;
+    this.pos = pos;
+    this.fontSize = fontSize;
+    this.color = color;
+    this.maxWidth = maxWidth;
   }
 }
