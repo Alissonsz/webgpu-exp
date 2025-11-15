@@ -22,6 +22,7 @@ import { AssetManager } from "./AssetManager.ts";
 import { AnimationSystem } from "./systems/animation.ts";
 import { AudioSystem } from "./systems/audio";
 import { AudioEngine } from "./AudioEngine";
+import { InputSystem } from "./systems/input.ts";
 
 window.addEventListener("load", async () => {
   console.log("Window loaded");
@@ -61,6 +62,7 @@ window.addEventListener("load", async () => {
   w.addSystem(new ScriptSystem());
   w.addSystem(new PhysicsSystem());
   w.addSystem(new AudioSystem());
+  w.addSystem(new InputSystem());
 
   const playerColliderOffsetPercentage = vec2.create(0.2, 0.55);
   const playerColliderPercentage = 0.45;
@@ -97,9 +99,17 @@ window.addEventListener("load", async () => {
         vec2.create(0, 0),
         vec2.create(0, 0),
         false,
-        new Collider(false, 
-          vec2.create(Math.floor(playerSize.x * playerColliderOffsetPercentage.x), Math.floor(playerSize.y * playerColliderOffsetPercentage.y)), 
-          vec2.create(Math.floor(playerSize.x * playerColliderPercentage), Math.floor(playerSize.y * playerColliderPercentage))), 
+        new Collider(
+          false,
+          vec2.create(
+            Math.floor(playerSize.x * playerColliderOffsetPercentage.x),
+            Math.floor(playerSize.y * playerColliderOffsetPercentage.y),
+          ),
+          vec2.create(
+            Math.floor(playerSize.x * playerColliderPercentage),
+            Math.floor(playerSize.y * playerColliderPercentage),
+          ),
+        ),
       ),
     ),
   );
