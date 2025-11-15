@@ -1,17 +1,18 @@
-import { System, World } from "../ecs";
-import { BatchRenderer } from "../BatchRenderer.ts";
+import { System } from "../ecs";
+import { BatchRenderer, Color } from "../BatchRenderer.ts";
 import {
   CameraComponent,
   LevelComponent,
+  ParticleEmmiterComponent,
   PhysicsBodyComponent,
   SpriteComponent,
   TransformComponent,
 } from "../components/index.ts";
 import { Rect } from "../Rect.ts";
 import { Camera } from "../Camera.ts";
-import { LevelData } from "../types.ts";
 import { AssetManager } from "../AssetManager.ts";
-import { PhysicsBody } from "../physics/PhysicsBodies.ts";
+import { Texture } from "../Texture.ts";
+import { Sprite } from "../Sprite.ts";
 
 export class RenderSystem extends System {
   constructor() {
@@ -36,10 +37,41 @@ export class RenderSystem extends System {
 
     const src = new Rect(0, 0, 0, 0);
     const dst = new Rect(0, 0, 0, 0);
+    const color: Color = { r: 0, g: 0, b: 0, a: 0 };
 
     const level = this.world.getComponentManager().getComponentsOfType(LevelComponent).values().next()
       .value as LevelComponent;
 
+    // Draw particles
+    for (const [_, p, t] of this.world.queryComponents(ParticleEmmiterComponent, TransformComponent)) {
+      const pc = p as ParticleEmmiterComponent;
+      let particleTexture: Texture;
+      let particleSprite: Sprite;
+      if (pc.particleParamters.sprite) {
+        particleTexture = AssetManager.getTexture(pc.particleParamters.sprite.spriteSheet.texture);
+        particleSprite = pc.particleParamters.sprite;
+      }
+
+      for (const particle of pc.particles) {
+        if (!particle.active) continue;
+        dst.x = particle.position.x;
+        dst.y = particle.position.y;
+        dst.w = particle.size.x;
+        dst.h = particle.size.y;
+
+        color.r = particle.color.r;
+        color.g = particle.color.g;
+        color.b = particle.color.b;
+        color.a = particle.color.a;
+
+        if (pc.particleParamters.sprite)
+        {
+          BatchRenderer.drawSprite(particleTexture, particleSprite.rect, dst, color);
+        } else BatchRenderer.drawRect(dst, color);
+      }
+    }
+
+    // Draw level
     if (level) {
       for (const layer of level.levelData.layerInstances) {
         // Render tile layer
@@ -64,15 +96,13 @@ export class RenderSystem extends System {
             BatchRenderer.drawSprite(level.tilesetTextures[layer.__tilesetDefUid], src, dst);
           });
         }
-        else if (layer.__type == "IntGrid") {
-
-        }
       }
     } else {
       console.warn("No LevelComponent found in the world.");
     }
 
     const r: Rect = new Rect(0, 0, 0, 0);
+
 
     for (const [_, s, t] of this.world.queryComponents(SpriteComponent, TransformComponent)) {
       const spriteComp = s as SpriteComponent;
@@ -109,6 +139,7 @@ export class RenderSystem extends System {
         BatchRenderer.drawRect(collisionRect, { r: 1, g: 0, b: 0, a: 0.3 });
       }
     }
+
     BatchRenderer.end();
   }
 }
