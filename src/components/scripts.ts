@@ -120,13 +120,16 @@ export class PlayerController extends Script {
     }
 
     if (InputState.isKeyPressed(Keys.Space)) {
-      if (this.onGround) {
+      if (this.onGround && InputState.getKeyState(Keys.Space).lastPressedTime + 100 > performance.now()) {
         pb.physicsBody.velocity.y = -340;
       }
     }
 
     if (!this.onGround) {
       this.currentState = State.JUMPING;
+
+      if (!InputState.getKeyState(Keys.Space).pressed && pb.physicsBody.velocity.y < 0)
+        pb.physicsBody.velocity.y += 100;
     }
 
     if (this.walkingDirection == WalkingDirection.LEFT) {

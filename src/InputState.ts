@@ -1,3 +1,11 @@
+type KeyState = {
+  pressed: boolean;
+  lastPressedTime: number;
+  isHeld: boolean;
+};
+
+type KeysState = { [key: string]: KeyState };
+
 export enum Keys {
   ArrowUp,
   ArrowDown,
@@ -23,6 +31,8 @@ export class InputState {
     [Keys.Space]: false,
   };
 
+  private static keysState: KeysState = {};
+
   static initialize() {
     window.addEventListener("keydown", (event) => {
       const key = event.code as keyof typeof Keys;
@@ -37,6 +47,17 @@ export class InputState {
         InputState.keyboardState[Keys[key]] = false;
       }
     });
+
+    // Initialize keysState
+    for (const key in Keys) {
+      if (isNaN(Number(key))) {
+        InputState.keysState[Keys[key as keyof typeof Keys]] = {
+          pressed: false,
+          lastPressedTime: 0,
+          isHeld: false,
+        };
+      }
+    }
   }
 
   static isKeyPressed(key: Keys): boolean {
@@ -45,5 +66,19 @@ export class InputState {
 
   static getKeyboardState(): Record<Keys, boolean> {
     return InputState.keyboardState;
+  }
+
+  static getKeysState(): KeysState {
+    return InputState.keysState;
+  }
+
+  static getKeyState(key: Keys): KeyState | undefined {
+    {
+      return InputState.keysState[key];
+    }
+  }
+
+  static setKeyState(key: Keys, state: KeyState): void {
+    InputState.keysState[key] = state;
   }
 }
