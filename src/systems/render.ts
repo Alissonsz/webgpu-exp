@@ -6,6 +6,7 @@ import {
   ParticleEmmiterComponent,
   PhysicsBodyComponent,
   SpriteComponent,
+  TextComponent,
   TransformComponent,
 } from "../components/index.ts";
 import { Rect } from "../Rect.ts";
@@ -13,6 +14,8 @@ import { Camera } from "../Camera.ts";
 import { AssetManager } from "../AssetManager.ts";
 import { Texture } from "../Texture.ts";
 import { Sprite } from "../Sprite.ts";
+import { PhysicsBody } from "../physics/PhysicsBodies.ts";
+import { TextRenderer } from "../TextRenderer.ts";
 
 export class RenderSystem extends System {
   constructor() {
@@ -82,19 +85,20 @@ export class RenderSystem extends System {
           gridTiles.forEach((tile) => {
             const tilePos = { x: tile.px[0], y: tile.px[1] };
             const tilesetUV = { x: tile.src[0], y: tile.src[1] };
-    
+
             dst.x = tilePos.x;
             dst.y = tilePos.y;
             dst.w = 16; // TODO: Extract this from level
             dst.h = 16; // TODO: Extract this from level
-    
+
             src.x = tilesetUV.x;
             src.y = tilesetUV.y;
             src.w = 16; // TODO: Extract this from level
             src.h = 16; // TODO: Extract this from level
-    
+
             BatchRenderer.drawSprite(level.tilesetTextures[layer.__tilesetDefUid], src, dst);
           });
+        } else if (layer.__type == "IntGrid") {
         }
       }
     } else {
@@ -141,5 +145,20 @@ export class RenderSystem extends System {
     }
 
     BatchRenderer.end();
+
+    TextRenderer.beginFrame();
+    const textCanvas = TextRenderer.getCanvas();
+    for (const [e, t, tr] of this.world.queryComponents(TextComponent, TransformComponent)) {
+      const textComp = t as TextComponent;
+      const transformComp = tr as TransformComponent;
+
+      TextRenderer.renderText({
+        text: textComp.text,
+        position: textComp.pos,
+        fontSize: textComp.fontSize,
+        color: textComp.color,
+        maxWidth: textComp.maxWidth,
+      });
+    }
   }
 }

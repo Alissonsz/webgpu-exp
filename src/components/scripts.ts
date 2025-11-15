@@ -1,10 +1,19 @@
-import { CameraComponent, PhysicsBodyComponent, TransformComponent, SpriteComponent, AnimationStateComponent, ParticleEmmiterComponent } from ".";
+import {
+  CameraComponent,
+  PhysicsBodyComponent,
+  TransformComponent,
+  SpriteComponent,
+  AnimationStateComponent,
+  ParticleEmmiterComponent,
+  TextComponent,
+} from ".";
 import { Entity, World } from "../ecs/World";
 import { GameEvent } from "../EventQueue";
 import { InputState, Keys } from "../InputState";
 import { PhysicsSystem } from "../systems/physics";
 import { AudioSystem } from "../systems/audio";
 import { Vec2, vec2 } from "@gustavo4passos/wgpu-matrix";
+import { TextRenderer } from "../TextRenderer";
 
 export abstract class Script {
   world: World;
@@ -81,6 +90,8 @@ export class PlayerController extends Script {
     const pb  = this.entity.getComponent(PhysicsBodyComponent);
     const sc  = this.entity.getComponent(SpriteComponent);
     const asc = this.entity.getComponent(AnimationStateComponent);
+    const textComp = this.entity.getComponent(TextComponent);
+    const camera = this.world.getEntityByTag("Camera")?.getComponent(CameraComponent).camera;
 
     const physicsSystem = this.world.getSystem(PhysicsSystem);
     this.onGround = physicsSystem.isOnGround(this.entity);
@@ -125,9 +136,11 @@ export class PlayerController extends Script {
     switch (this.currentState) {
       case State.IDLE:
         asc.state = "idle";
+        textComp.text = "to parante";
         break;
       case State.RUNNING:
         asc.state = "run";
+        textComp.text = "to corrente";
         break;
       case State.JUMPING:
         if (asc.state !== "jump") {
@@ -135,8 +148,16 @@ export class PlayerController extends Script {
           asc.stateToAnimationAndSpriteMap["jump"].animation.currentFrame = 0;
         }
         asc.state = "jump";
+        textComp.text = "to pulante";
         break;
     }
+
+    const textCanvas = TextRenderer.getCanvas();
+
+    const screenX = (tc.position.x - camera.pos.x + 40) * (textCanvas.width / camera.dimensions.x);
+    const screenY = (tc.position.y - camera.pos.y + 30) * (textCanvas.height / camera.dimensions.y);
+    textComp.pos.x = screenX;
+    textComp.pos.y = screenY;
   }
 }
 
