@@ -24,10 +24,11 @@ import { AssetManager } from "./AssetManager.ts";
 import { AnimationSystem } from "./systems/animation.ts";
 import { AudioSystem } from "./systems/audio";
 import { AudioEngine } from "./AudioEngine";
-import { ParticleSystem } from "./systems/particle"
+import { ParticleSystem } from "./systems/particle";
 import { Sprite, SpriteSheet } from "./Sprite.ts";
 import { TextRenderer } from "./TextRenderer.ts";
 import { InputSystem } from "./systems/input.ts";
+import { createEntityFromTemplate } from "./entityTemplates/index.ts";
 
 window.addEventListener("load", async () => {
   console.log("Window loaded");
@@ -51,7 +52,7 @@ window.addEventListener("load", async () => {
 
   // Use orthographic projection for 2D tile rendering
   const aspectRatio = canvas.clientWidth / canvas.clientHeight;
-  const orthoHeight = 256;
+  const orthoHeight = 400;
   const orthoWidth = orthoHeight * aspectRatio;
 
   const { device, context } = await initializeWebgpu(canvas);
@@ -84,56 +85,11 @@ window.addEventListener("load", async () => {
   w.addSystem(new RenderSystem());
   w.addSystem(new InputSystem());
 
-  const playerColliderOffsetPercentage = vec2.create(0.2, 0.55);
-  const playerColliderPercentage = 0.45;
-  const playerSize = vec2.create(100, 100);
-  const e = w.createEntity("Player", true, vec2.create(90, 10), playerSize);
-  await AssetManager.loadTexture("playerRun", "Run.png");
-  await AssetManager.loadTexture("playerIdle", "Idle.png");
-  await AssetManager.loadTexture("playerJump", "Jump.png");
-  e.addComponent<SpriteComponent>(new SpriteComponent("playerRun", vec2.create(0, 0), 128, 128));
-  e.addComponent<ScriptComponent>(new ScriptComponent(new PlayerController(w, e)));
-  e.addComponent<AnimationStateComponent>(
-    new AnimationStateComponent(
-      {
-        run: {
-          animation: new AnimationComponent(8, 0.1, vec2.create(0, 0)),
-          sprite: new SpriteComponent("playerRun", vec2.create(0, 0), 128, 128),
-        },
-        idle: {
-          animation: new AnimationComponent(8, 0.1, vec2.create(0, 0)),
-          sprite: new SpriteComponent("playerIdle", vec2.create(0, 0), 128, 128),
-        },
-        jump: {
-          animation: new AnimationComponent(8, 0.1, vec2.create(0, 0), false),
-          sprite: new SpriteComponent("playerJump", vec2.create(0, 0), 128, 128),
-        },
-      },
-      "idle",
-    ),
-  );
-  e.addComponent<AnimationComponent>(new AnimationComponent(8, 0.1, vec2.create(0, 0)));
-  e.addComponent<PhysicsBodyComponent>(
-    new PhysicsBodyComponent(
-      new PhysicsBody(
-        vec2.create(0, 0),
-        vec2.create(0, 0),
-        false,
-        new Collider(
-          false,
-          vec2.create(
-            Math.floor(playerSize.x * playerColliderOffsetPercentage.x),
-            Math.floor(playerSize.y * playerColliderOffsetPercentage.y),
-          ),
-          vec2.create(
-            Math.floor(playerSize.x * playerColliderPercentage),
-            Math.floor(playerSize.y * playerColliderPercentage),
-          ),
-        ),
-      ),
-    ),
-  );
-  e.addComponent(new TextComponent("Hello World", vec2.create(10, 50), 48, "#000000"));
+  await createEntityFromTemplate("player", {
+    w,
+    position: vec2.create(90, 10),
+    size: vec2.create(100, 100),
+  });
 
   const c = w.createEntity("Camera", true, vec2.create(0, 0), vec2.create(0, 0));
   c.addComponent(new CameraComponent(new Camera(vec2.create(10, -50), vec2.create(orthoWidth, orthoHeight)), true));
@@ -143,60 +99,67 @@ window.addEventListener("load", async () => {
   const smokeSprite = new Sprite(smokeSpriteSheet, 0);
 
   const smoke2SpriteSheet = new SpriteSheet("smoke2", vec2.create(512, 512), 1);
-  const smoke2Sprite      = new Sprite(smoke2SpriteSheet, 0);
+  const smoke2Sprite = new Sprite(smoke2SpriteSheet, 0);
 
   const p = w.createEntity("PlayerDust", true, vec2.create(100, 100), vec2.create(0, 0));
-  p.addComponent<ParticleEmmiterComponent>(new ParticleEmmiterComponent({
-    initialVelocity: vec2.create(-20, -10),
-    velocityVariation: vec2.create(5, 25),
-    lifetime: 0.2,
-    initialColor: vec4.create(0.95, 0.64, 0.51, 1.0),
-    finalColor: vec4.create(0.95, 0.64, 0.51, 0.0),
-    initialSize: vec2.create(2, 2),
-    finalSize: vec2.create(15, 15),
-    emissionTime: 0.02,
-    sprite: smokeSprite
-  }));
+  p.addComponent<ParticleEmmiterComponent>(
+    new ParticleEmmiterComponent({
+      initialVelocity: vec2.create(-20, -10),
+      velocityVariation: vec2.create(5, 25),
+      lifetime: 0.2,
+      initialColor: vec4.create(0.95, 0.64, 0.51, 1.0),
+      finalColor: vec4.create(0.95, 0.64, 0.51, 0.0),
+      initialSize: vec2.create(2, 2),
+      finalSize: vec2.create(15, 15),
+      emissionTime: 0.02,
+      sprite: smokeSprite,
+    }),
+  );
   p.addComponent<ScriptComponent>(new ScriptComponent(new WalkingDustController(w, p)));
 
   const f = w.createEntity("Fire", true, vec2.create(95, 10), vec2.create(0, 0));
-  f.addComponent<ParticleEmmiterComponent>(new ParticleEmmiterComponent({
-    initialVelocity: vec2.create(0, -45),
-    velocityVariation: vec2.create(40, 10),
-    lifetime: 1,
-    initialColor: vec4.create(0.95, 0.75, 0.30, 0.7),
-    finalColor: vec4.create(0.85, 0.1, 0.1, 0),
-    initialSize: vec2.create(7, 7),
-    finalSize: vec2.create(3, 3),
-    emissionTime: 0.03,
-  }));
+  f.addComponent<ParticleEmmiterComponent>(
+    new ParticleEmmiterComponent({
+      initialVelocity: vec2.create(0, -45),
+      velocityVariation: vec2.create(40, 10),
+      lifetime: 1,
+      initialColor: vec4.create(0.95, 0.75, 0.3, 0.7),
+      finalColor: vec4.create(0.85, 0.1, 0.1, 0),
+      initialSize: vec2.create(7, 7),
+      finalSize: vec2.create(3, 3),
+      emissionTime: 0.03,
+    }),
+  );
 
   const f2 = w.createEntity("Fire2", true, vec2.create(250, 40), vec2.create(0, 0));
-  f2.addComponent<ParticleEmmiterComponent>(new ParticleEmmiterComponent({
-    initialVelocity: vec2.create(0, 30),
-    velocityVariation: vec2.create(100, 10),
-    lifetime: 2,
-    initialColor: vec4.create(0.3, 0.3, 0.9, 0.7),
-    finalColor: vec4.create(0.9, 0.7, 0.3, 0),
-    initialSize: vec2.create(1, 1),
-    finalSize: vec2.create(100, 100),
-    emissionTime: 0.03,
-    sprite: smoke2Sprite
-  }));
-
+  f2.addComponent<ParticleEmmiterComponent>(
+    new ParticleEmmiterComponent({
+      initialVelocity: vec2.create(0, 30),
+      velocityVariation: vec2.create(100, 10),
+      lifetime: 2,
+      initialColor: vec4.create(0.3, 0.3, 0.9, 0.7),
+      finalColor: vec4.create(0.9, 0.7, 0.3, 0),
+      initialSize: vec2.create(1, 1),
+      finalSize: vec2.create(100, 100),
+      emissionTime: 0.03,
+      sprite: smoke2Sprite,
+    }),
+  );
 
   const f3 = w.createEntity("Fire3", true, vec2.create(100, 165), vec2.create(0, 0));
-  f3.addComponent<ParticleEmmiterComponent>(new ParticleEmmiterComponent({
-    initialVelocity: vec2.create(0, -70),
-    velocityVariation: vec2.create(50, 40),
-    lifetime: 2,
-    initialColor: vec4.create(1.0, 1.0, 1.0, 1.0),
-    finalColor: vec4.create(0.9, 0.7, 0.3, 0),
-    initialSize: vec2.create(1, 1),
-    finalSize: vec2.create(100, 100),
-    emissionTime: 0.03,
-    sprite: smokeSprite
-  }));
+  f3.addComponent<ParticleEmmiterComponent>(
+    new ParticleEmmiterComponent({
+      initialVelocity: vec2.create(0, -70),
+      velocityVariation: vec2.create(50, 40),
+      lifetime: 2,
+      initialColor: vec4.create(1.0, 1.0, 1.0, 1.0),
+      finalColor: vec4.create(0.9, 0.7, 0.3, 0),
+      initialSize: vec2.create(1, 1),
+      finalSize: vec2.create(100, 100),
+      emissionTime: 0.03,
+      sprite: smokeSprite,
+    }),
+  );
 
   let lastRender = performance.now();
 

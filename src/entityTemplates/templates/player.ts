@@ -1,0 +1,76 @@
+import { vec2 } from "@gustavo4passos/wgpu-matrix";
+import { AssetManager } from "../../AssetManager";
+import {
+  AnimationComponent,
+  AnimationStateComponent,
+  PhysicsBodyComponent,
+  ScriptComponent,
+  SpriteComponent,
+  TextComponent,
+} from "../../components";
+import { PlayerController } from "../../components/scripts";
+import { Collider, PhysicsBody } from "../../physics/PhysicsBodies";
+import { BaseEntityOptions, EntityCreator } from "../types";
+
+const COLLIDER_OFFSET_PERCENTAGE = vec2.create(0.2, 0.55);
+const COLLIDER_PERCENTAGE = 0.45;
+
+export const createPlayer: EntityCreator<BaseEntityOptions> = async ({
+  w,
+  position,
+  size,
+}) => {
+  const e = w.createEntity("Player", true, position, size);
+
+  await AssetManager.loadTexture("playerRun", "Run.png");
+  await AssetManager.loadTexture("playerIdle", "Idle.png");
+  await AssetManager.loadTexture("playerJump", "Jump.png");
+
+  e.addComponent(
+    new SpriteComponent("playerRun", vec2.create(0, 0), 128, 128),
+  );
+  e.addComponent(new ScriptComponent(new PlayerController(w, e)));
+  e.addComponent(
+    new AnimationStateComponent(
+      {
+        run: {
+          animation: new AnimationComponent(8, 0.1, vec2.create(0, 0)),
+          sprite: new SpriteComponent("playerRun", vec2.create(0, 0), 128, 128),
+        },
+        idle: {
+          animation: new AnimationComponent(8, 0.1, vec2.create(0, 0)),
+          sprite: new SpriteComponent("playerIdle", vec2.create(0, 0), 128, 128),
+        },
+        jump: {
+          animation: new AnimationComponent(8, 0.1, vec2.create(0, 0), false),
+          sprite: new SpriteComponent("playerJump", vec2.create(0, 0), 128, 128),
+        },
+      },
+      "idle",
+    ),
+  );
+  e.addComponent(new AnimationComponent(8, 0.1, vec2.create(0, 0)));
+  e.addComponent(
+    new PhysicsBodyComponent(
+      new PhysicsBody(
+        vec2.create(0, 0),
+        vec2.create(0, 0),
+        false,
+        new Collider(
+          false,
+          vec2.create(
+            Math.floor(size.x * COLLIDER_OFFSET_PERCENTAGE.x),
+            Math.floor(size.y * COLLIDER_OFFSET_PERCENTAGE.y),
+          ),
+          vec2.create(
+            Math.floor(size.x * COLLIDER_PERCENTAGE),
+            Math.floor(size.y * COLLIDER_PERCENTAGE),
+          ),
+        ),
+      ),
+    ),
+  );
+  e.addComponent(new TextComponent("Hello World", vec2.create(10, 50), 48, "#000000"));
+
+  return e;
+};

@@ -5,8 +5,7 @@ export class EntityManager {
   private freedIds: OpaqueEntity[] = [];
   private activeEntities: OpaqueEntity[] = [];
 
-  constructor() {
-  }
+  constructor() {}
 
   createEntity(): OpaqueEntity {
     let id: OpaqueEntity;
