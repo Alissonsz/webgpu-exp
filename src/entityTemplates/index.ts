@@ -1,7 +1,9 @@
 import { createPlayer } from "./templates/player";
+import { createBullet } from "./templates/projectiles";
 
 const templateRegistry = {
   player: createPlayer,
+  bullet: createBullet,
 } as const;
 
 type TemplateRegistry = typeof templateRegistry;

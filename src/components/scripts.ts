@@ -8,12 +8,13 @@ import {
   TextComponent,
 } from ".";
 import { Entity, World } from "../ecs/World";
-import { GameEvent } from "../EventQueue";
+import { EventQueue, GameEvent, Topic } from "../EventQueue";
 import { InputState, Keys } from "../InputState";
 import { PhysicsSystem } from "../systems/physics";
 import { AudioSystem } from "../systems/audio";
 import { Vec2, vec2 } from "@gustavo4passos/wgpu-matrix";
 import { TextRenderer } from "../TextRenderer";
+import { createEntityFromTemplate } from "../entityTemplates";
 
 export abstract class Script {
   world: World;
@@ -56,7 +57,7 @@ export class PlayerController extends Script {
   }
 
   handleSounds() {
-    const audioSystem   = this.world.getSystem(AudioSystem);
+    const audioSystem = this.world.getSystem(AudioSystem);
     const asc = this.entity.getComponent(AnimationStateComponent);
 
     // Just landed
@@ -86,9 +87,9 @@ export class PlayerController extends Script {
   }
 
   onUpdate(deltaTime: number): void {
-    const tc  = this.entity.getComponent(TransformComponent);
-    const pb  = this.entity.getComponent(PhysicsBodyComponent);
-    const sc  = this.entity.getComponent(SpriteComponent);
+    const tc = this.entity.getComponent(TransformComponent);
+    const pb = this.entity.getComponent(PhysicsBodyComponent);
+    const sc = this.entity.getComponent(SpriteComponent);
     const asc = this.entity.getComponent(AnimationStateComponent);
     const textComp = this.entity.getComponent(TextComponent);
     const camera = this.world.getEntityByTag("Camera")?.getComponent(CameraComponent).camera;
@@ -117,6 +118,18 @@ export class PlayerController extends Script {
     } else {
       pb.physicsBody.velocity.x = 0;
       this.currentState = State.IDLE;
+    }
+
+    if (InputState.getKeyState(Keys.KeyK).pressed && !InputState.getKeyState(Keys.KeyK).isHeld) {
+      createEntityFromTemplate("bullet", {
+        w: this.world,
+        position:
+          this.walkingDirection === WalkingDirection.RIGHT
+            ? vec2.create(tc.position.x + 75, tc.position.y + 75)
+            : vec2.create(tc.position.x - 5, tc.position.y + 75),
+        size: vec2.create(16, 16),
+        velocity: this.walkingDirection == WalkingDirection.RIGHT ? vec2.create(50, 0) : vec2.create(-50, 0),
+      });
     }
 
     if (InputState.isKeyPressed(Keys.Space)) {
@@ -161,6 +174,20 @@ export class PlayerController extends Script {
     const screenY = (tc.position.y - camera.pos.y + 30) * (textCanvas.height / camera.dimensions.y);
     textComp.pos.x = screenX;
     textComp.pos.y = screenY;
+  }
+}
+
+export class BulletController extends Script {
+  constructor(world: World, entity: Entity) {
+    super(world, entity);
+  }
+
+  onUpdate(deltaTime: number): void {
+    const collisionEvent = EventQueue.consume(Topic.COLISION);
+
+    if (collisionEvent) {
+      this.world.destroyEntity(this.entity.entity);
+    }
   }
 }
 
@@ -220,10 +247,11 @@ export class WalkingDustController extends Script {
       if (playerVelocity > 0) {
         dustTc.position.x = playerTc.position.x + playerPb.physicsBody.collider.offset.x;
         ec.particleParamters.initialVelocity.x = this.initialVelocity.x;
-      } 
+      }
       // Moving to the left
       else {
-        dustTc.position.x = playerTc.position.x + playerPb.physicsBody.collider.offset.x + playerPb.physicsBody.collider.size.x / 2;
+        dustTc.position.x =
+          playerTc.position.x + playerPb.physicsBody.collider.offset.x + playerPb.physicsBody.collider.size.x / 2;
         ec.particleParamters.initialVelocity.x = -this.initialVelocity.x;
       }
     } else ec.active = false;

@@ -52,22 +52,18 @@ export const createPlayer: EntityCreator<BaseEntityOptions> = async ({
   e.addComponent(new AnimationComponent(8, 0.1, vec2.create(0, 0)));
   e.addComponent(
     new PhysicsBodyComponent(
-      new PhysicsBody(
-        vec2.create(0, 0),
-        vec2.create(0, 0),
-        false,
-        new Collider(
-          false,
-          vec2.create(
-            Math.floor(size.x * COLLIDER_OFFSET_PERCENTAGE.x),
-            Math.floor(size.y * COLLIDER_OFFSET_PERCENTAGE.y),
-          ),
-          vec2.create(
+      new PhysicsBody({
+        collider: new Collider({
+          size: vec2.create(
             Math.floor(size.x * COLLIDER_PERCENTAGE),
             Math.floor(size.y * COLLIDER_PERCENTAGE),
           ),
-        ),
-      ),
+          offset: vec2.create(
+            Math.floor(size.x * COLLIDER_OFFSET_PERCENTAGE.x),
+            Math.floor(size.y * COLLIDER_OFFSET_PERCENTAGE.y),
+          ),
+        }),
+      }),
     ),
   );
   e.addComponent(new TextComponent("Hello World", vec2.create(10, 50), 48, "#000000"));

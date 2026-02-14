@@ -1,11 +1,18 @@
 import { System, Entity } from "../ecs";
 import { Collider } from "../physics/PhysicsBodies";
-import { LevelComponent, PhysicsBodyComponent, TransformComponent } from "../components";
+import { LevelComponent, PhysicsBodyComponent, TagComponent, TransformComponent } from "../components";
 import { vec2, Vec2 } from "@gustavo4passos/wgpu-matrix";
 import { Rect } from "../Rect.ts";
+import { EventQueue, Topic } from "../EventQueue.ts";
 
 type EntityCollisionData = [Entity, PhysicsBodyComponent, TransformComponent];
 type EntityCollisionGroup = [Entity, PhysicsBodyComponent, TransformComponent][];
+
+export interface CollisionResult {
+  rect: Rect;
+  entity?: Entity;
+  isLevelGeometry: boolean;
+}
 
 export class PhysicsSystem extends System {
   private GRAVITY_ACCELERATION = vec2.create(0, 800);
@@ -16,33 +23,39 @@ export class PhysicsSystem extends System {
     this.r2 = new Rect(0, 0, 0, 0);
   }
 
-  checkCollisionAgainstEntityGroup(r1: Rect, cg: EntityCollisionGroup): Rect | undefined {
-    let hasCollidedThisStep = false;
+  checkCollisionAgainstEntityGroup(r1: Rect, cg: EntityCollisionGroup): CollisionResult | undefined {
     for (let j = 0; j < cg.length; j++) {
-
-      const [_, p, t] = cg[j];
+      const [entity, p, t] = cg[j];
 
       if (!p.active) continue;
       if (p.physicsBody.collider.isTrigger) continue;
 
       const tc = t as TransformComponent;
-      const pos   = tc.position;
+      const pos = tc.position;
 
       const collider = p.physicsBody.collider;
       PhysicsSystem.getRectFromCollider(pos, collider, this.r2);
 
       if (PhysicsSystem.doRectsCollide(r1, this.r2)) {
-        return this.r2;
+        return {
+          rect: this.r2,
+          entity,
+          isLevelGeometry: false,
+        };
       }
     }
 
     return undefined;
   }
 
-  checkCollisionAgainsRectGroup(r1: Rect, rects: Array<Rect>): Rect | undefined {
+  checkCollisionAgainsRectGroup(r1: Rect, rects: Array<Rect>, levelEntity?: Entity): CollisionResult | undefined {
     for (const r of rects) {
       if (PhysicsSystem.doRectsCollide(r1, r)) {
-        return r;
+        return {
+          rect: r,
+          entity: levelEntity,
+          isLevelGeometry: true,
+        };
       }
     }
 
@@ -50,39 +63,44 @@ export class PhysicsSystem extends System {
   }
 
   update(deltaTime: number) {
-    const pbComponentGroups = this.world.getComponentGroups(PhysicsBodyComponent, TransformComponent) as EntityCollisionGroup;
+    const pbComponentGroups = this.world.getComponentGroups(
+      PhysicsBodyComponent,
+      TransformComponent,
+    ) as EntityCollisionGroup;
     const lComponentGroups = this.world.getComponentGroups(LevelComponent) as [Entity, LevelComponent][];
 
-    // Pre-instantiate rects and vecs that will be used every frame    
+    // Pre-instantiate rects and vecs that will be used every frame
     let rPrev = new Rect(0, 0, 0, 0);
     let r1 = new Rect(0, 0, 0, 0);
     let r2 = new Rect(0, 0, 0, 0);
 
-    for(let i = 0; i < pbComponentGroups.length; i++) { 
-      const [_, p, t] = pbComponentGroups[i] as EntityCollisionData;
+    for (let i = 0; i < pbComponentGroups.length; i++) {
+      const [entity, p, t] = pbComponentGroups[i] as EntityCollisionData;
       const physicsBody = p.physicsBody;
-      
+
       if (physicsBody.isSolid) continue; // So far solids can't move
-      
+
       const tc = t as TransformComponent;
 
       PhysicsSystem.getRectFromCollider(tc.position, physicsBody.collider, r1);
 
       let position = vec2.create(0, 0);
-      let scale    = vec2.create(0, 0);
+      let scale = vec2.create(0, 0);
       position.x = r1.x;
       position.y = r1.y;
       scale.x = r1.w;
       scale.y = r1.h;
 
-      vec2.add(physicsBody.acceleration, this.GRAVITY_ACCELERATION, physicsBody.acceleration);
+      if (physicsBody.useGravity) {
+        vec2.add(physicsBody.acceleration, this.GRAVITY_ACCELERATION, physicsBody.acceleration);
+      }
       const accDt = vec2.mulScalar(physicsBody.acceleration, deltaTime);
       vec2.add(physicsBody.velocity, accDt, physicsBody.velocity);
 
       // Reset acceleration before next update
       physicsBody.acceleration.x = 0;
       physicsBody.acceleration.y = 0;
-      
+
       if (physicsBody.velocity.x == 0 && physicsBody.velocity.y == 0) continue;
       p.active = false; // Avoid collisions with themselves
 
@@ -102,15 +120,26 @@ export class PhysicsSystem extends System {
 
         let collisionResult = this.checkCollisionAgainstEntityGroup(r1, pbComponentGroups);
         if (!collisionResult) {
-          for (const [e, lc] of lComponentGroups) {
-            collisionResult = this.checkCollisionAgainsRectGroup(r1, lc.collisionRects);
+          for (const [levelEntity, lc] of lComponentGroups) {
+            collisionResult = this.checkCollisionAgainsRectGroup(r1, lc.collisionRects, levelEntity);
             if (collisionResult) break;
           }
         }
-        
+
         if (collisionResult) {
           hasCollidedThisStep = true;
-          r2 = collisionResult;
+          r2 = collisionResult.rect;
+          const entityTag = entity.getComponent(TagComponent).tag;
+
+          // Publish collision event
+          entityTag !== "Player" &&
+            EventQueue.publish({
+              topic: Topic.COLISION,
+              data: {
+                entityA: entityTag,
+                entityB: collisionResult.entity?.getComponent(TagComponent)?.tag,
+              },
+            });
         }
 
         if (hasCollidedThisStep) {
@@ -124,6 +153,7 @@ export class PhysicsSystem extends System {
             } else {
               furthestDestination.x = r2.right;
             }
+            currentPosStep.x = furthestDestination.x;
             stepSize.x = 0;
             physicsBody.velocity.x = 0;
           } else {
@@ -132,6 +162,7 @@ export class PhysicsSystem extends System {
             } else {
               furthestDestination.y = r2.bottom;
             }
+            currentPosStep.y = furthestDestination.y;
             stepSize.y = 0;
             physicsBody.velocity.y = 0;
           }
@@ -141,7 +172,7 @@ export class PhysicsSystem extends System {
           furthestDestination = currentPosStep;
         }
       }
-      
+
       tc.position.x = furthestDestination.x - physicsBody.collider.offset.x;
       tc.position.y = furthestDestination.y - physicsBody.collider.offset.y;
       p.active = true;
@@ -150,8 +181,8 @@ export class PhysicsSystem extends System {
 
   isOnGround(e: Entity): boolean {
     const tc = e.getComponent(TransformComponent);
-    const pbc = e.getComponent(PhysicsBodyComponent); 
-    
+    const pbc = e.getComponent(PhysicsBodyComponent);
+
     if (!pbc) {
       console.log("Warning: isOnGround check, but entity has no physics body component");
       return false;
@@ -160,16 +191,14 @@ export class PhysicsSystem extends System {
     const pos = tc.position;
     const physicsBody = pbc.physicsBody;
 
-    
     const eColliderRect = PhysicsSystem.getRectFromCollider(pos, physicsBody.collider);
     eColliderRect.y += 1;
-    
+
     const lComponentGroup = this.world.getComponentGroups(LevelComponent) as [Entity, LevelComponent][];
 
-    for (const [e, lc] of lComponentGroup) {
-      if (this.checkCollisionAgainsRectGroup(eColliderRect, lc.collisionRects)) return true;
+    for (const [levelEntity, lc] of lComponentGroup) {
+      if (this.checkCollisionAgainsRectGroup(eColliderRect, lc.collisionRects, levelEntity)) return true;
     }
-    
 
     return false;
   }
@@ -191,7 +220,7 @@ export class PhysicsSystem extends System {
 
   static doRectsCollide(r1: Rect, r2: Rect): boolean {
     if (r1.left >= r2.right) return false;
-    if (r1.right <=r2.left) return false;
+    if (r1.right <= r2.left) return false;
     if (r1.top >= r2.bottom) return false;
     if (r1.bottom <= r2.top) return false;
 

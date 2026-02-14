@@ -29,6 +29,7 @@ import { Sprite, SpriteSheet } from "./Sprite.ts";
 import { TextRenderer } from "./TextRenderer.ts";
 import { InputSystem } from "./systems/input.ts";
 import { createEntityFromTemplate } from "./entityTemplates/index.ts";
+import { EventQueue, Topic } from "./EventQueue.ts";
 
 window.addEventListener("load", async () => {
   console.log("Window loaded");
@@ -162,6 +163,7 @@ window.addEventListener("load", async () => {
   );
 
   let lastRender = performance.now();
+  EventQueue.initialize();
 
   function gameLoop() {
     const now = performance.now();
