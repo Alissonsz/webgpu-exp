@@ -11,6 +11,7 @@ import {
 import { Collider, PhysicsBody } from "../../physics/PhysicsBodies";
 import { BaseEntityOptions, EntityCreator } from "../types";
 import { BulletController } from "../../components/scripts";
+import { AudioSystem } from "../../systems/audio";
 
 const COLLIDER_OFFSET_PERCENTAGE = vec2.create(0.2, 0.55);
 const COLLIDER_PERCENTAGE = 0.45;
@@ -41,6 +42,9 @@ export const createBullet: EntityCreator<
       }),
     ),
   );
+
+  const audioSystem = w.getSystem(AudioSystem);
+  audioSystem.playSFX("bullet");
 
   return e;
 };

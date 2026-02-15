@@ -8,7 +8,7 @@ import {
   TextComponent,
 } from ".";
 import { Entity, World } from "../ecs/World";
-import { EventQueue, GameEvent, Topic } from "../EventQueue";
+import { EventBus, GameEvent, Topic } from "../EventQueue";
 import { InputState, Keys } from "../InputState";
 import { PhysicsSystem } from "../systems/physics";
 import { AudioSystem } from "../systems/audio";
@@ -26,6 +26,10 @@ export abstract class Script {
   }
 
   onEvent(event: GameEvent): void {
+    // Default implementation does nothing
+  }
+
+  onDestroy(): void {
     // Default implementation does nothing
   }
 
@@ -178,16 +182,22 @@ export class PlayerController extends Script {
 }
 
 export class BulletController extends Script {
+  private unsubscribe: () => void;
+
   constructor(world: World, entity: Entity) {
     super(world, entity);
+
+    this.unsubscribe = EventBus.subscribe(Topic.COLLISION, (data) => {
+      if (data.entityA == this.entity.id) {
+        this.world.destroyEntity(this.entity.id);
+      }
+    });
   }
 
-  onUpdate(deltaTime: number): void {
-    const collisionEvent = EventQueue.consume(Topic.COLISION);
+  onUpdate(deltaTime: number): void {}
 
-    if (collisionEvent) {
-      this.world.destroyEntity(this.entity.entity);
-    }
+  onDestroy(): void {
+    this.unsubscribe?.();
   }
 }
 

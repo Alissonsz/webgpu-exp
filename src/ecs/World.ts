@@ -1,7 +1,13 @@
 import { OpaqueEntity, EntityManager } from "./EntityManager.ts";
 import { Component, ComponentClass, ComponentManager } from "./Component";
-import { System, SystemConstructor} from "./System";
-import { ActivationStatusComponent, PhysicsBodyComponent, TagComponent, TransformComponent } from "../components";
+import { System, SystemConstructor } from "./System";
+import {
+  ActivationStatusComponent,
+  PhysicsBodyComponent,
+  ScriptComponent,
+  TagComponent,
+  TransformComponent,
+} from "../components";
 import { Vec2 } from "@gustavo4passos/wgpu-matrix";
 
 export class Entity {
@@ -11,6 +17,10 @@ export class Entity {
   constructor(entity: OpaqueEntity, world: World) {
     this.entity = entity;
     this.world = world;
+  }
+
+  get id(): number {
+    return this.entity;
   }
 
   addComponent<T extends Component>(component: T): T {
@@ -54,6 +64,9 @@ export class World {
   }
 
   destroyEntity(entity: OpaqueEntity): void {
+    const scriptComponent = this.componentManager.getComponent(entity, ScriptComponent);
+    scriptComponent?.script.onDestroy();
+
     this.componentManager.removeAllComponents(entity);
     this.entityManager.destroyEntity(entity);
   }

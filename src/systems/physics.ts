@@ -3,7 +3,7 @@ import { Collider } from "../physics/PhysicsBodies";
 import { LevelComponent, PhysicsBodyComponent, TagComponent, TransformComponent } from "../components";
 import { vec2, Vec2 } from "@gustavo4passos/wgpu-matrix";
 import { Rect } from "../Rect.ts";
-import { EventQueue, Topic } from "../EventQueue.ts";
+import { EventBus, Topic } from "../EventQueue.ts";
 
 type EntityCollisionData = [Entity, PhysicsBodyComponent, TransformComponent];
 type EntityCollisionGroup = [Entity, PhysicsBodyComponent, TransformComponent][];
@@ -129,17 +129,15 @@ export class PhysicsSystem extends System {
         if (collisionResult) {
           hasCollidedThisStep = true;
           r2 = collisionResult.rect;
-          const entityTag = entity.getComponent(TagComponent).tag;
 
           // Publish collision event
-          entityTag !== "Player" &&
-            EventQueue.publish({
-              topic: Topic.COLISION,
-              data: {
-                entityA: entityTag,
-                entityB: collisionResult.entity?.getComponent(TagComponent)?.tag,
-              },
-            });
+          EventBus.publish({
+            topic: Topic.COLLISION,
+            data: {
+              entityA: entity.id,
+              entityB: collisionResult.entity?.id,
+            },
+          });
         }
 
         if (hasCollidedThisStep) {

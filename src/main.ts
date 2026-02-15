@@ -2,24 +2,13 @@ import { initializeWebgpu } from "./renderer";
 import { vec2, vec4 } from "@gustavo4passos/wgpu-matrix";
 import { InputState } from "./InputState";
 import { World } from "./ecs";
-import {
-  SpriteComponent,
-  CameraComponent,
-  ScriptComponent,
-  LevelComponent,
-  PhysicsBodyComponent,
-  AnimationComponent,
-  AnimationStateComponent,
-  ParticleEmmiterComponent,
-  TextComponent,
-} from "./components";
+import { CameraComponent, ScriptComponent, LevelComponent, ParticleEmmiterComponent } from "./components";
 import { Camera } from "./Camera.ts";
 import { RenderSystem } from "./systems/render.ts";
 import { ScriptSystem } from "./systems/script.ts";
 import { PhysicsSystem } from "./systems/physics.ts";
 import { BatchRenderer } from "./BatchRenderer.ts";
-import { CameraController, PlayerController, WalkingDustController } from "./components/scripts";
-import { Collider, PhysicsBody } from "./physics/PhysicsBodies";
+import { CameraController, WalkingDustController } from "./components/scripts";
 import { AssetManager } from "./AssetManager.ts";
 import { AnimationSystem } from "./systems/animation.ts";
 import { AudioSystem } from "./systems/audio";
@@ -29,7 +18,7 @@ import { Sprite, SpriteSheet } from "./Sprite.ts";
 import { TextRenderer } from "./TextRenderer.ts";
 import { InputSystem } from "./systems/input.ts";
 import { createEntityFromTemplate } from "./entityTemplates/index.ts";
-import { EventQueue, Topic } from "./EventQueue.ts";
+import { EventBus } from "./EventQueue.ts";
 
 window.addEventListener("load", async () => {
   console.log("Window loaded");
@@ -69,6 +58,7 @@ window.addEventListener("load", async () => {
   AssetManager.loadSound("step", "../assets/sounds/step.wav");
   AssetManager.loadSound("step_r", "../assets/sounds/step_r.wav");
   AssetManager.loadSound("step_l", "../assets/sounds/step_l.wav");
+  AssetManager.loadSound("bullet", "../assets/sounds/bullet.wav");
   AssetManager.loadTexture("smoke", "../assets/smoke.png");
   AssetManager.loadTexture("smoke2", "../assets/smoke2.png");
 
@@ -163,7 +153,7 @@ window.addEventListener("load", async () => {
   );
 
   let lastRender = performance.now();
-  EventQueue.initialize();
+  EventBus.initialize();
 
   function gameLoop() {
     const now = performance.now();

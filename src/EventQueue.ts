@@ -1,11 +1,11 @@
 export enum Topic {
   LEVEL_START,
-  COLISION,
+  COLLISION,
 }
 
 interface EventDataMap {
   [Topic.LEVEL_START]: { levelNumber: number };
-  [Topic.COLISION]: { entityA: string; entityB: string };
+  [Topic.COLLISION]: { entityA: number; entityB?: number };
 }
 
 export interface GameEvent<T extends Topic = Topic> {
@@ -15,31 +15,32 @@ export interface GameEvent<T extends Topic = Topic> {
 
 type EventHandler<T extends Topic = Topic> = (data: EventDataMap[T]) => void;
 
-export class EventQueue {
-  private static queue: Record<Topic, Array<GameEvent>>;
-  private static listeners: Record<Topic, Array<EventHandler>>;
+export class EventBus {
+  private static listeners: Map<Topic, Set<EventHandler>> = new Map();
 
   static initialize() {
-    this.queue = {
-      [Topic.LEVEL_START]: [],
-      [Topic.COLISION]: [],
-    };
-    this.listeners = {
-      [Topic.LEVEL_START]: [],
-      [Topic.COLISION]: [],
-    };
+    Object.values(Topic).forEach((topic) => {
+      if (typeof topic === "number") {
+        this.listeners.set(topic, new Set());
+      }
+    });
   }
 
-  static registerListener(topic: Topic, listener: EventHandler) {
-    this.listeners[topic].push(listener);
+  static subscribe<T extends Topic>(topic: T, listener: EventHandler<T>): () => void {
+    this.listeners.get(topic).add(listener);
+
+    return () => {
+      this.listeners.get(topic)?.delete(listener);
+    };
   }
 
   static publish(event: GameEvent) {
-    this.queue[event.topic].push(event);
-    this.listeners[event.topic].forEach((listener) => listener(event.data));
+    this.listeners.get(event.topic).forEach((listener) => listener(event.data));
   }
 
-  static consume(topic: Topic): GameEvent | undefined {
-    return this.queue[topic].shift();
+  static printListeners() {
+    this.listeners.forEach((listeners, topic) => {
+      console.log(`Topic: ${Topic[topic]} (${topic}), Listeners: ${listeners.size}`);
+    });
   }
 }
