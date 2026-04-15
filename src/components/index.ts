@@ -190,7 +190,7 @@ export class ParticleEmmiterComponent {
         velocity: vec2.create(0, 0),
         color: vec4.create(0, 0, 0, 0),
         size: vec2.create(0, 0),
-        lifeRemaining: 0
+        lifeRemaining: 0,
       });
     }
   }
@@ -209,5 +209,13 @@ export class TextComponent implements Component {
     this.fontSize = fontSize;
     this.color = color;
     this.maxWidth = maxWidth;
+  }
+}
+
+export class ProjectilePathComponent {
+  rects: Array<Rect>;
+
+  constructor() {
+    this.rects = [];
   }
 }

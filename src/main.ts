@@ -79,7 +79,7 @@ window.addEventListener("load", async () => {
   await createEntityFromTemplate("player", {
     w,
     position: vec2.create(90, 10),
-    size: vec2.create(100, 100),
+    size: vec2.create(60, 60),
   });
 
   const c = w.createEntity("Camera", true, vec2.create(0, 0), vec2.create(0, 0));

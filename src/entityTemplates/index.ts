@@ -1,9 +1,10 @@
 import { createPlayer } from "./templates/player";
-import { createBullet } from "./templates/projectiles";
+import { createBullet, createParable } from "./templates/projectiles";
 
 const templateRegistry = {
   player: createPlayer,
   bullet: createBullet,
+  parable: createParable,
 } as const;
 
 type TemplateRegistry = typeof templateRegistry;

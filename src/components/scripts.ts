@@ -6,6 +6,7 @@ import {
   AnimationStateComponent,
   ParticleEmmiterComponent,
   TextComponent,
+  ProjectilePathComponent,
 } from ".";
 import { Entity, World } from "../ecs/World";
 import { EventBus, GameEvent, Topic } from "../EventQueue";
@@ -15,6 +16,7 @@ import { AudioSystem } from "../systems/audio";
 import { Vec2, vec2 } from "@gustavo4passos/wgpu-matrix";
 import { TextRenderer } from "../TextRenderer";
 import { createEntityFromTemplate } from "../entityTemplates";
+import { Rect } from "../Rect";
 
 export abstract class Script {
   world: World;
@@ -129,10 +131,22 @@ export class PlayerController extends Script {
         w: this.world,
         position:
           this.walkingDirection === WalkingDirection.RIGHT
-            ? vec2.create(tc.position.x + 75, tc.position.y + 75)
-            : vec2.create(tc.position.x - 5, tc.position.y + 75),
+            ? vec2.create(tc.position.x + 75, tc.position.y + 35)
+            : vec2.create(tc.position.x - 5, tc.position.y + 35),
         size: vec2.create(16, 16),
         velocity: this.walkingDirection == WalkingDirection.RIGHT ? vec2.create(50, 0) : vec2.create(-50, 0),
+      });
+    }
+
+    if (InputState.getKeyState(Keys.KeyM).pressed && !InputState.getKeyState(Keys.KeyM).isHeld) {
+      createEntityFromTemplate("parable", {
+        w: this.world,
+        position:
+          this.walkingDirection === WalkingDirection.RIGHT
+            ? vec2.create(tc.position.x + 75, tc.position.y + 50)
+            : vec2.create(tc.position.x, tc.position.y + 50),
+        size: vec2.create(16, 16),
+        velocity: this.walkingDirection == WalkingDirection.RIGHT ? vec2.create(200, -500) : vec2.create(-200, -500),
       });
     }
 
@@ -183,18 +197,49 @@ export class PlayerController extends Script {
 
 export class BulletController extends Script {
   private unsubscribe: () => void;
+  private withTrace: boolean;
+  private traceWidth = 5;
 
-  constructor(world: World, entity: Entity) {
+  constructor({
+    world,
+    entity,
+    withTrace = false,
+    autoDestroy = true,
+  }: {
+    world: World;
+    entity: Entity;
+    withTrace?: boolean;
+    autoDestroy?: boolean;
+  }) {
     super(world, entity);
+    this.withTrace = withTrace;
 
     this.unsubscribe = EventBus.subscribe(Topic.COLLISION, (data) => {
       if (data.entityA == this.entity.id) {
-        this.world.destroyEntity(this.entity.id);
+        if (autoDestroy) {
+          this.world.destroyEntity(this.entity.id);
+        } else {
+          const pbc = this.entity.getComponent(PhysicsBodyComponent);
+          pbc.physicsBody.acceleration.x = 0;
+          pbc.physicsBody.acceleration.y = 0;
+          pbc.physicsBody.velocity.x = 0;
+          pbc.physicsBody.velocity.y = 0;
+          pbc.physicsBody.useGravity = false;
+        }
       }
     });
   }
 
-  onUpdate(deltaTime: number): void {}
+  onUpdate(deltaTime: number): void {
+    if (this.withTrace) {
+      const tc = this.entity.getComponent(TransformComponent);
+      const ppc = this.entity.getComponent(ProjectilePathComponent);
+
+      const newRect = new Rect(tc.position.x, tc.position.y, 5, 5);
+
+      ppc.rects.push(newRect);
+    }
+  }
 
   onDestroy(): void {
     this.unsubscribe?.();

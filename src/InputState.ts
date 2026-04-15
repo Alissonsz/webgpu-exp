@@ -16,6 +16,7 @@ export enum Keys {
   KeyS,
   KeyD,
   KeyK,
+  KeyM,
   Space,
 }
 
@@ -30,6 +31,7 @@ export class InputState {
     [Keys.KeyS]: false,
     [Keys.KeyD]: false,
     [Keys.KeyK]: false,
+    [Keys.KeyM]: false,
     [Keys.Space]: false,
   };
 

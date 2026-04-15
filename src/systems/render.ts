@@ -5,6 +5,7 @@ import {
   LevelComponent,
   ParticleEmmiterComponent,
   PhysicsBodyComponent,
+  ProjectilePathComponent,
   SpriteComponent,
   TextComponent,
   TransformComponent,
@@ -67,8 +68,7 @@ export class RenderSystem extends System {
         color.b = particle.color.b;
         color.a = particle.color.a;
 
-        if (pc.particleParamters.sprite)
-        {
+        if (pc.particleParamters.sprite) {
           BatchRenderer.drawSprite(particleTexture, particleSprite.rect, dst, color);
         } else BatchRenderer.drawRect(dst, color);
       }
@@ -107,7 +107,6 @@ export class RenderSystem extends System {
 
     const r: Rect = new Rect(0, 0, 0, 0);
 
-
     for (const [_, s, t] of this.world.queryComponents(SpriteComponent, TransformComponent)) {
       const spriteComp = s as SpriteComponent;
       r.x = (t as TransformComponent).position.x;
@@ -142,6 +141,19 @@ export class RenderSystem extends System {
 
         BatchRenderer.drawRect(collisionRect, { r: 1, g: 0, b: 0, a: 0.3 });
       }
+    }
+
+    for (const [_, ppc] of this.world.queryComponents(ProjectilePathComponent)) {
+      const projectilePathComp = ppc as ProjectilePathComponent;
+
+      projectilePathComp.rects.forEach((rect) => {
+        BatchRenderer.drawRect(rect, {
+          r: 0,
+          g: 1,
+          b: 0,
+          a: 0.3,
+        });
+      });
     }
 
     BatchRenderer.end();
