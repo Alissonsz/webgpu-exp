@@ -283,7 +283,9 @@ export class BatchRenderer {
 
     let radians = angle * (Math.PI / 180.0);
     let rotationMatrix = null;
-    let performRotation = angle ? true : false;
+    // Since rotation is being done in the CPU, avoid doing it if angle == 0 for performance
+    // reasons
+    let performRotation = (angle && angle != 0) ? true : false;
     if (performRotation) rotationMatrix = mat4.rotateZ(mat4.identity(), radians);
 
     // Top left vertex
