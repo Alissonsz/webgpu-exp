@@ -1,7 +1,7 @@
 import { Camera } from "./Camera";
 import { Texture } from "./Texture";
 import { Rect } from "./Rect";
-import { Vec2 } from "@gustavo4passos/wgpu-matrix";
+import { Vec2, vec2, mat4, Mat4 } from "@gustavo4passos/wgpu-matrix";
 import spriteBatchShaderCode from "./shaders/sprite_batch.wgsl";
 
 const F32_SIZE = 4; // F32 has 4 bytes
@@ -67,10 +67,12 @@ export class BatchRenderer {
   private static viewMatrixBuffer: GPUBuffer;
   private static texturesUsedThisBatch: Array<GPUTexture> = [];
   private static whiteTexture: Texture;
+
   // Helpers
   private static originUnitRect: Rect;
   private static normSrcRect: Rect;
   private static whiteColor: Color;
+  private static vertexData: Vec2;
 
   static stats: BatchRendererStats;
 
@@ -106,6 +108,8 @@ export class BatchRenderer {
     BatchRenderer.originUnitRect = new Rect(0, 0, 1, 1);
     BatchRenderer.normSrcRect = new Rect(0, 0, 1, 1);
     BatchRenderer.whiteColor = { r: 1, g: 1, b: 1, a: 1 };
+
+    BatchRenderer.vertexData = vec2.create(0, 0);
 
     BatchRenderer.hasInitialized = true;
 
@@ -259,7 +263,7 @@ export class BatchRenderer {
     BatchRenderer.flush();
   }
 
-  static drawSprite(texture: Texture, src: Rect, dst: Rect, color?: Color, flipped?: boolean) {
+  static drawSprite(texture: Texture, src: Rect, dst: Rect, color?: Color, flipped?: boolean, angle?: number) {
     BatchRenderer.flushIfQuadLimitReached();
     const textureIndex = BatchRenderer.getTextureSlot(texture);
 
@@ -277,41 +281,54 @@ export class BatchRenderer {
       BatchRenderer.normSrcRect.w *= -1;
     }
 
+    let radians = angle * (Math.PI / 180.0);
+    let rotationMatrix = null;
+    let performRotation = angle ? true : false;
+    if (performRotation) rotationMatrix = mat4.rotateZ(mat4.identity(), radians);
+
     // Top left vertex
-    BatchRenderer.setVertexData(
+    BatchRenderer.vertexData.x = dst.x;
+    BatchRenderer.vertexData.y = dst.y;
+    if (performRotation) BatchRenderer.rotateCurrentVertex(dst, rotationMatrix)
+    BatchRenderer.uploadVertexData(
       currentVertexIndex,
-      dst.x,
-      dst.y,
       BatchRenderer.normSrcRect.x,
       BatchRenderer.normSrcRect.y,
       textureIndex,
       color ? color : BatchRenderer.whiteColor,
     );
+
     // Top right vertex
-    BatchRenderer.setVertexData(
+    BatchRenderer.vertexData.x = dst.x + dst.w;
+    BatchRenderer.vertexData.y = dst.y;
+    if (performRotation) BatchRenderer.rotateCurrentVertex(dst, rotationMatrix)
+    BatchRenderer.uploadVertexData(
       currentVertexIndex + 1,
-      dst.x + dst.w,
-      dst.y,
       BatchRenderer.normSrcRect.x + BatchRenderer.normSrcRect.w,
       BatchRenderer.normSrcRect.y,
       textureIndex,
       color ? color : BatchRenderer.whiteColor,
     );
+
     // Bottom left vertex
-    BatchRenderer.setVertexData(
+    BatchRenderer.vertexData.x = dst.x;
+    BatchRenderer.vertexData.y = dst.y + dst.h;
+    if (performRotation) BatchRenderer.rotateCurrentVertex(dst, rotationMatrix)
+    BatchRenderer.uploadVertexData(
       currentVertexIndex + 2,
-      dst.x,
-      dst.y + dst.h,
       BatchRenderer.normSrcRect.x,
       BatchRenderer.normSrcRect.y + BatchRenderer.normSrcRect.h,
       textureIndex,
       color ? color : BatchRenderer.whiteColor,
     );
+
     // Bottom right vertex
-    BatchRenderer.setVertexData(
+    BatchRenderer.vertexData.x = dst.x + dst.w;
+    BatchRenderer.vertexData.y = dst.y + dst.h;
+
+    if (performRotation) BatchRenderer.rotateCurrentVertex(dst, rotationMatrix)
+    BatchRenderer.uploadVertexData(
       currentVertexIndex + 3,
-      dst.x + dst.w,
-      dst.y + dst.h,
       BatchRenderer.normSrcRect.x + BatchRenderer.normSrcRect.w,
       BatchRenderer.normSrcRect.y + BatchRenderer.normSrcRect.h,
       textureIndex,
@@ -321,22 +338,20 @@ export class BatchRenderer {
     BatchRenderer.pendingQuads += 1;
   }
 
-  static drawRect(dst: Rect, color: Color) {
-    BatchRenderer.drawSprite(BatchRenderer.whiteTexture, BatchRenderer.originUnitRect, dst, color);
+  static drawRect(dst: Rect, color: Color, angle?: number) {
+    BatchRenderer.drawSprite(BatchRenderer.whiteTexture, BatchRenderer.originUnitRect, dst, color, false, angle);
   }
 
-  private static setVertexData(
+  private static uploadVertexData(
     index: number,
-    x: number,
-    y: number,
     texCoordX: number,
     texCoordY: number,
     textureId: number,
     color: Color,
   ) {
     const startingIndex = index * VertexData.F32_LENGTH;
-    BatchRenderer.vertexBufferData[startingIndex] = x;
-    BatchRenderer.vertexBufferData[startingIndex + 1] = y;
+    BatchRenderer.vertexBufferData[startingIndex    ] = BatchRenderer.vertexData.x;
+    BatchRenderer.vertexBufferData[startingIndex + 1] = BatchRenderer.vertexData.y;
     BatchRenderer.vertexBufferData[startingIndex + 2] = texCoordX;
     BatchRenderer.vertexBufferData[startingIndex + 3] = texCoordY;
     BatchRenderer.vertexBufferData[startingIndex + 4] = textureId;
@@ -442,5 +457,14 @@ export class BatchRenderer {
     }
 
     return BatchRenderer.texturesUsedThisBatch.push(texture.getInternalTexture());
+  }
+
+  private static rotateCurrentVertex(destinationRect: Rect, rotationMatrix: Mat4) {
+    // Move vertex to the origin
+    BatchRenderer.vertexData.x -= destinationRect.x - (destinationRect.w / 2);
+    BatchRenderer.vertexData.y -= destinationRect.y - (destinationRect.h / 2);
+    vec2.transformMat4(BatchRenderer.vertexData, rotationMatrix, BatchRenderer.vertexData);
+    BatchRenderer.vertexData.x += destinationRect.x - (destinationRect.w / 2);
+    BatchRenderer.vertexData.y += destinationRect.y - (destinationRect.h / 2);
   }
 }

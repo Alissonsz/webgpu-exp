@@ -21,12 +21,15 @@ export class TagComponent implements Component {
 export class TransformComponent implements Component {
   position: Vec2;
   scale: Vec2;
+  angle: number;
 
-  constructor(position?: Vec2, scale?: Vec2) {
+  constructor(position?: Vec2, scale?: Vec2, angle?: number) {
     if (!position) position = vec2.create(0, 0);
     if (!scale) scale = vec2.create(200, 200);
+    if (!angle) angle = 0;
     this.position = position;
     this.scale = scale;
+    this.angle = angle;
   }
 }
 

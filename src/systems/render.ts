@@ -15,7 +15,6 @@ import { Camera } from "../Camera.ts";
 import { AssetManager } from "../AssetManager.ts";
 import { Texture } from "../Texture.ts";
 import { Sprite } from "../Sprite.ts";
-import { PhysicsBody } from "../physics/PhysicsBodies.ts";
 import { TextRenderer } from "../TextRenderer.ts";
 
 export class RenderSystem extends System {
@@ -122,6 +121,7 @@ export class RenderSystem extends System {
           r,
           spriteComp.color,
           spriteComp.flipped,
+          (t as TransformComponent).angle
         );
       } else BatchRenderer.drawRect(r, spriteComp.color);
     }
