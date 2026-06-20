@@ -5,7 +5,7 @@ import {
   LevelComponent,
   ParticleEmmiterComponent,
   PhysicsBodyComponent,
-  ProjectilePathComponent,
+  RopeComponent,
   SpriteComponent,
   TextComponent,
   TransformComponent,
@@ -17,6 +17,7 @@ import { Texture } from "../Texture.ts";
 import { Sprite } from "../Sprite.ts";
 import { PhysicsBody } from "../physics/PhysicsBodies.ts";
 import { TextRenderer } from "../TextRenderer.ts";
+import { vec2 } from "@gustavo4passos/wgpu-matrix";
 
 export class RenderSystem extends System {
   constructor() {
@@ -143,16 +144,15 @@ export class RenderSystem extends System {
       }
     }
 
-    for (const [_, ppc] of this.world.queryComponents(ProjectilePathComponent)) {
-      const projectilePathComp = ppc as ProjectilePathComponent;
+    for (const [_, rc] of this.world.queryComponents(RopeComponent)) {
+      const ropeComp = rc as RopeComponent;
 
-      projectilePathComp.rects.forEach((rect) => {
-        BatchRenderer.drawRect(rect, {
-          r: 0,
-          g: 1,
-          b: 0,
-          a: 0.3,
-        });
+      ropeComp.points.forEach((point, i) => {
+        if (i === 0) return;
+        const from = vec2.create(ropeComp.points[i - 1].position.x, ropeComp.points[i - 1].position.y);
+
+        const to = vec2.create(ropeComp.points[i].position.x, ropeComp.points[i].position.y);
+        BatchRenderer.drawLine(from, to, 2);
       });
     }
 

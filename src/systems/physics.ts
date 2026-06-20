@@ -23,13 +23,16 @@ export class PhysicsSystem extends System {
     this.r2 = new Rect(0, 0, 0, 0);
   }
 
-  checkCollisionAgainstEntityGroup(r1: Rect, cg: EntityCollisionGroup): CollisionResult | undefined {
+  checkCollisionAgainstEntityGroup(r1: Rect, cg: EntityCollisionGroup, ignoredTags = []): CollisionResult | undefined {
     for (let j = 0; j < cg.length; j++) {
       const [entity, p, t] = cg[j];
 
       if (!p.active) continue;
       if (p.physicsBody.collider.isTrigger) continue;
 
+      const tag = entity.getComponent(TagComponent)?.tag;
+
+      if (tag && ignoredTags.includes(tag)) continue;
       const tc = t as TransformComponent;
       const pos = tc.position;
 
@@ -118,7 +121,11 @@ export class PhysicsSystem extends System {
         rPrev.set(currentPosStep.x, currentPosStep.y, scale.x, scale.y);
         r1.set(currentPosStep.x + stepSize.x, currentPosStep.y + stepSize.y, scale.x, scale.y);
 
-        let collisionResult = this.checkCollisionAgainstEntityGroup(r1, pbComponentGroups);
+        let collisionResult = this.checkCollisionAgainstEntityGroup(
+          r1,
+          pbComponentGroups,
+          physicsBody.collider.ignoredTags,
+        );
         if (!collisionResult) {
           for (const [levelEntity, lc] of lComponentGroups) {
             collisionResult = this.checkCollisionAgainsRectGroup(r1, lc.collisionRects, levelEntity);

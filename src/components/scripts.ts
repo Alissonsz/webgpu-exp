@@ -6,7 +6,7 @@ import {
   AnimationStateComponent,
   ParticleEmmiterComponent,
   TextComponent,
-  ProjectilePathComponent,
+  RopeComponent,
 } from ".";
 import { Entity, World } from "../ecs/World";
 import { EventBus, GameEvent, Topic } from "../EventQueue";
@@ -143,8 +143,8 @@ export class PlayerController extends Script {
         w: this.world,
         position:
           this.walkingDirection === WalkingDirection.RIGHT
-            ? vec2.create(tc.position.x + 75, tc.position.y + 50)
-            : vec2.create(tc.position.x, tc.position.y + 50),
+            ? vec2.create(tc.position.x + 30, tc.position.y + 30)
+            : vec2.create(tc.position.x + 25, tc.position.y + 40),
         size: vec2.create(16, 16),
         velocity: this.walkingDirection == WalkingDirection.RIGHT ? vec2.create(200, -500) : vec2.create(-200, -500),
       });
@@ -226,6 +226,17 @@ export class BulletController extends Script {
           pbc.physicsBody.velocity.y = 0;
           pbc.physicsBody.useGravity = false;
         }
+
+        const rc = entity.getComponent(RopeComponent);
+        if (rc) {
+          const tc = entity.getComponent(TransformComponent);
+          rc.points.push({
+            position: vec2.create(tc.position.x, tc.position.y),
+            pinned: true,
+            pastPosition: vec2.create(tc.position.x, tc.position.y),
+          });
+          rc.hooked = true;
+        }
       }
     });
   }
@@ -233,11 +244,12 @@ export class BulletController extends Script {
   onUpdate(deltaTime: number): void {
     if (this.withTrace) {
       const tc = this.entity.getComponent(TransformComponent);
-      const ppc = this.entity.getComponent(ProjectilePathComponent);
+      const rc = this.entity.getComponent(RopeComponent);
+      if (rc.hooked) return;
+      const pos = vec2.create(tc.position.x, tc.position.y);
+      const pos2 = vec2.create(tc.position.x, tc.position.y);
 
-      const newRect = new Rect(tc.position.x, tc.position.y, 5, 5);
-
-      ppc.rects.push(newRect);
+      rc.points.push({ position: pos, pinned: false, pastPosition: pos2 });
     }
   }
 

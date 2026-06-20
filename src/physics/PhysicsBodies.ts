@@ -4,17 +4,25 @@ export interface ColliderOptions {
   isTrigger?: boolean;
   size?: Vec2;
   offset?: Vec2;
+  ignoredTags?: string[];
 }
 
 export class Collider {
   isTrigger: boolean;
   size: Vec2;
   offset: Vec2;
+  ignoredTags: string[];
 
-  constructor({ isTrigger = false, size = vec2.create(0, 0), offset = vec2.create(0, 0) }: ColliderOptions = {}) {
+  constructor({
+    isTrigger = false,
+    size = vec2.create(0, 0),
+    offset = vec2.create(0, 0),
+    ignoredTags = [],
+  }: ColliderOptions = {}) {
     this.isTrigger = isTrigger;
     this.size = size;
     this.offset = offset;
+    this.ignoredTags = ignoredTags;
   }
 }
 

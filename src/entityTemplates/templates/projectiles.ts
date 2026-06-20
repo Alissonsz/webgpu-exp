@@ -4,7 +4,7 @@ import {
   AnimationComponent,
   AnimationStateComponent,
   PhysicsBodyComponent,
-  ProjectilePathComponent,
+  RopeComponent,
   ScriptComponent,
   SpriteComponent,
   TextComponent,
@@ -12,6 +12,7 @@ import {
 import { Collider, PhysicsBody } from "../../physics/PhysicsBodies";
 import { BaseEntityOptions, EntityCreator } from "../types";
 import { BulletController } from "../../components/scripts";
+
 import { AudioSystem } from "../../systems/audio";
 
 const COLLIDER_OFFSET_PERCENTAGE = vec2.create(0.2, 0.55);
@@ -62,7 +63,13 @@ export const createParable: EntityCreator<
   e.addComponent(
     new ScriptComponent(new BulletController({ world: w, entity: e, withTrace: true, autoDestroy: false })),
   );
-  e.addComponent(new ProjectilePathComponent());
+  const rc = new RopeComponent();
+  rc.points.push({
+    position: vec2.create(position.x, position.y),
+    pinned: true,
+    pastPosition: vec2.create(position.x, position.y),
+  });
+  e.addComponent(rc);
   e.addComponent(
     new PhysicsBodyComponent(
       new PhysicsBody({
@@ -70,11 +77,13 @@ export const createParable: EntityCreator<
         velocity,
         useGravity: true,
         collider: new Collider({
+          isTrigger: true,
           size: vec2.create(Math.floor(size.x * COLLIDER_PERCENTAGE), Math.floor(size.y * COLLIDER_PERCENTAGE)),
           offset: vec2.create(
             Math.floor(size.x * COLLIDER_OFFSET_PERCENTAGE.x),
             Math.floor(size.y * COLLIDER_OFFSET_PERCENTAGE.y),
           ),
+          ignoredTags: ["Player"],
         }),
       }),
     ),

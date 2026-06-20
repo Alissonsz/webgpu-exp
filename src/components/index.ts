@@ -212,10 +212,18 @@ export class TextComponent implements Component {
   }
 }
 
-export class ProjectilePathComponent {
-  rects: Array<Rect>;
+export type RopePoint = {
+  position: Vec2;
+  pastPosition: Vec2;
+  pinned: boolean;
+};
+
+export class RopeComponent {
+  points: Array<RopePoint>;
+  hooked: boolean;
 
   constructor() {
-    this.rects = [];
+    this.points = [];
+    this.hooked = false;
   }
 }

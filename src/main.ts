@@ -19,6 +19,7 @@ import { TextRenderer } from "./TextRenderer.ts";
 import { InputSystem } from "./systems/input.ts";
 import { createEntityFromTemplate } from "./entityTemplates/index.ts";
 import { EventBus } from "./EventQueue.ts";
+import { RopeSystem } from "./systems/rope.ts";
 
 window.addEventListener("load", async () => {
   console.log("Window loaded");
@@ -71,6 +72,7 @@ window.addEventListener("load", async () => {
   w.addSystem(new PhysicsSystem());
   w.addSystem(new AnimationSystem());
   w.addSystem(new ScriptSystem());
+  w.addSystem(new RopeSystem());
   w.addSystem(new ParticleSystem());
   w.addSystem(new AudioSystem());
   w.addSystem(new RenderSystem());

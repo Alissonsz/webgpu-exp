@@ -287,6 +287,7 @@ export class BatchRenderer {
       textureIndex,
       color ? color : BatchRenderer.whiteColor,
     );
+
     // Top right vertex
     BatchRenderer.setVertexData(
       currentVertexIndex + 1,
@@ -323,6 +324,91 @@ export class BatchRenderer {
 
   static drawRect(dst: Rect, color: Color) {
     BatchRenderer.drawSprite(BatchRenderer.whiteTexture, BatchRenderer.originUnitRect, dst, color);
+  }
+
+  static drawLine(to: Vec2, from: Vec2, width: number) {
+    BatchRenderer.flushIfQuadLimitReached();
+
+    const dx = from.x - to.x;
+    const dy = from.y - to.y;
+    const length = Math.sqrt(dx * dx + dy * dy);
+    if (length === 0) return;
+
+    const texture = BatchRenderer.whiteTexture;
+    const textureIndex = BatchRenderer.getTextureSlot(texture);
+
+    const textureWidth = texture.width;
+    const textureHeight = texture.height;
+    const src = BatchRenderer.originUnitRect;
+
+    const currentVertexIndex = BatchRenderer.pendingQuads * VERTICES_PER_QUAD;
+    BatchRenderer.normSrcRect.x = src.x / textureWidth;
+    BatchRenderer.normSrcRect.y = src.y / textureHeight;
+    BatchRenderer.normSrcRect.w = src.w / textureWidth;
+    BatchRenderer.normSrcRect.h = src.h / textureHeight;
+
+    const halfWidth = width * 0.5;
+
+    const normalX = -dy / length;
+    const normalY = dx / length;
+
+    const offsetX = normalX * halfWidth;
+    const offsetY = normalY * halfWidth;
+
+    const ax = from.x + offsetX;
+    const ay = from.y + offsetY;
+
+    const bx = to.x + offsetX;
+    const by = to.y + offsetY;
+
+    const cx = from.x - offsetX;
+    const cy = from.y - offsetY;
+
+    const dx2 = to.x - offsetX;
+    const dy2 = to.y - offsetY;
+    // Top left vertex
+    BatchRenderer.setVertexData(
+      currentVertexIndex,
+      ax,
+      ay,
+      BatchRenderer.normSrcRect.x,
+      BatchRenderer.normSrcRect.y,
+      textureIndex,
+      BatchRenderer.whiteColor,
+    );
+
+    // Top right vertex
+    BatchRenderer.setVertexData(
+      currentVertexIndex + 1,
+      bx,
+      by,
+      BatchRenderer.normSrcRect.x + BatchRenderer.normSrcRect.w,
+      BatchRenderer.normSrcRect.y,
+      textureIndex,
+      BatchRenderer.whiteColor,
+    );
+    // Bottom left vertex
+    BatchRenderer.setVertexData(
+      currentVertexIndex + 2,
+      cx,
+      cy,
+      BatchRenderer.normSrcRect.x,
+      BatchRenderer.normSrcRect.y + BatchRenderer.normSrcRect.h,
+      textureIndex,
+      BatchRenderer.whiteColor,
+    );
+    // Bottom right vertex
+    BatchRenderer.setVertexData(
+      currentVertexIndex + 3,
+      dx2,
+      dy2,
+      BatchRenderer.normSrcRect.x + BatchRenderer.normSrcRect.w,
+      BatchRenderer.normSrcRect.y + BatchRenderer.normSrcRect.h,
+      textureIndex,
+      BatchRenderer.whiteColor,
+    );
+
+    BatchRenderer.pendingQuads += 1;
   }
 
   private static setVertexData(
